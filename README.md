@@ -1,6 +1,6 @@
-# Ecopath
+# EcoPath
 
-Ecopath is a Next.js application for mapping post-use material pathways by product and region. It combines Supabase-backed reference data, probability estimates, loss hotspots, and saved analyses into a simple dashboard for exploring lifecycle outcomes.
+EcoPath is a Next.js application for mapping post-use material pathways by product and region. It combines Supabase-backed reference data, probability estimates, loss hotspots, and saved analyses into a simple dashboard for exploring lifecycle outcomes.
 
 ## What it does
 

@@ -50,6 +50,7 @@ create table if not exists public.analyses (
   product_id uuid references public.products(id),
   region_id uuid references public.regions(id),
   notes text,
+  report jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -83,22 +84,31 @@ create policy "public read pathway probabilities" on public.pathway_probabilitie
 create policy "public read loss hotspots" on public.loss_hotspots
   for select using (true);
 
--- Allow authenticated users to manage reference data (for admin UI)
+-- Allow authenticated users to manage reference data (for app usage)
+drop policy if exists "auth manage products" on public.products;
 create policy "auth manage products" on public.products
-  for all using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
+  for all using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+drop policy if exists "auth manage regions" on public.regions;
 create policy "auth manage regions" on public.regions
-  for all using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
+  for all using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+drop policy if exists "auth manage pathways" on public.pathways;
 create policy "auth manage pathways" on public.pathways
-  for all using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
+  for all using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+drop policy if exists "auth manage pathway probabilities" on public.pathway_probabilities;
 create policy "auth manage pathway probabilities" on public.pathway_probabilities
-  for all using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
+  for all using (auth.uid() is not null)
+  with check (auth.uid() is not null);
+
+drop policy if exists "auth manage loss hotspots" on public.loss_hotspots;
 create policy "auth manage loss hotspots" on public.loss_hotspots
-  for all using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
+  for all using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 -- Analyses are user-owned
 create policy "users manage analyses" on public.analyses

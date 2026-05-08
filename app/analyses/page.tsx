@@ -7,6 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { UserMenu } from "@/components/user-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -24,13 +35,14 @@ type AnalysisRow = {
 export default function AnalysesPage() {
   const [analyses, setAnalyses] = useState<AnalysisRow[]>([]);
   const [status, setStatus] = useState<string>("");
+  const [deleteTarget, setDeleteTarget] = useState<AnalysisRow | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const supabase = createSupabaseBrowserClient();
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session?.user) {
           setStatus("Sign in to view saved analyses.");
           return;
         }
@@ -73,13 +85,37 @@ export default function AnalysesPage() {
     load();
   }, []);
 
+  const handleDelete = async (analysisId: string) => {
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.user) {
+        setStatus("Sign in to manage analyses.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("analyses")
+        .delete()
+        .eq("id", analysisId);
+
+      if (error) throw error;
+
+      setAnalyses((prev) => prev.filter((row) => row.id !== analysisId));
+      setDeleteTarget(null);
+    } catch (error) {
+      setStatus("Unable to delete analysis.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-              Ecopath
+              EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
               Saved analyses
@@ -118,11 +154,41 @@ export default function AnalysesPage() {
                   <CardTitle className="text-base">{analysis.title}</CardTitle>
                   <CardDescription>Updated {analysis.updated}</CardDescription>
                 </CardHeader>
-                <CardContent className="flex items-center justify-between">
+                <CardContent className="flex items-center justify-between gap-2">
                   <Badge variant="outline">{analysis.tag}</Badge>
-                  <Button size="sm" variant="ghost">
-                    Open
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/analyses/${analysis.id}`}
+                      className={buttonVariants({ variant: "ghost", size: "sm" })}
+                    >
+                      Open
+                    </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger
+                        className={buttonVariants({ variant: "destructive", size: "sm" })}
+                        onClick={() => setDeleteTarget(analysis)}
+                      >
+                        Delete
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete analysis</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove “{analysis.title}”.
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(analysis.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </CardContent>
               </Card>
             ))}

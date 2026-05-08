@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Sparkles, UploadCloud, Wrench, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,29 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-
-const PathwayBars = dynamic(
-  () => import("@/components/pathway-bars").then((mod) => mod.PathwayBars),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[220px] w-full items-center justify-center rounded-md border border-dashed border-zinc-200 text-sm text-zinc-500">
-        Loading chart…
-      </div>
-    ),
-  }
-);
-const PathwaySankey = dynamic(
-  () => import("@/components/pathway-sankey").then((mod) => mod.PathwaySankey),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[280px] w-full items-center justify-center rounded-md border border-dashed border-zinc-200 text-sm text-zinc-500">
-        Loading chart…
-      </div>
-    ),
-  }
-);
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type AnalysisPathway = {
   name: string;
@@ -55,18 +41,17 @@ type AnalysisPathway = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"manual" | "ai">("ai");
+  const [showModeDialog, setShowModeDialog] = useState(false);
+  const [modalStep, setModalStep] = useState<"mode" | "inputs">("mode");
   const [productType, setProductType] = useState("");
   const [region, setRegion] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const [summary, setSummary] = useState<string>("");
-  const [inferredProduct, setInferredProduct] = useState<string>("");
-  const [inferredRegion, setInferredRegion] = useState<string>("");
-  const [currentPathways, setCurrentPathways] = useState<AnalysisPathway[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [savedAnalyses, setSavedAnalyses] = useState<
@@ -82,6 +67,7 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -89,8 +75,8 @@ export default function Home() {
     const loadAnalyses = async () => {
       try {
         const supabase = createSupabaseBrowserClient();
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) return;
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session?.user) return;
 
         const { data, error } = await supabase
           .from("analyses")
@@ -130,27 +116,6 @@ export default function Home() {
     loadAnalyses();
   }, []);
 
-  const barData = useMemo(() => {
-    return currentPathways.map((pathway) => ({
-      name: pathway.name.replace(/\s+.*/, ""),
-      value: pathway.probability,
-    }));
-  }, [currentPathways]);
-
-  const sankeyData = useMemo(() => {
-    if (!currentPathways.length) return undefined;
-    const nodes = [
-      { name: productType || "Product" },
-      ...currentPathways.map((pathway) => ({ name: pathway.name })),
-    ];
-    const links = currentPathways.map((pathway, index) => ({
-      source: 0,
-      target: index + 1,
-      value: pathway.probability,
-    }));
-    return { nodes, links };
-  }, [currentPathways, productType]);
-
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -162,6 +127,106 @@ export default function Home() {
       setImageDataUrl(result);
     };
     reader.readAsDataURL(file);
+  };
+
+  const saveAnalysis = async (
+    pathways: AnalysisPathway[],
+    productName: string,
+    regionName: string
+  ) => {
+    const supabase = createSupabaseBrowserClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session?.user) {
+      window.location.href = "/auth";
+      return null;
+    }
+
+    const productLabel = productName.trim();
+    const regionLabel = regionName.trim();
+
+    if (!productLabel || !regionLabel) {
+      setStatus("Add product type and region before saving.");
+      return null;
+    }
+
+    const { data: productRow } = await supabase
+      .from("products")
+      .select("id")
+      .eq("name", productLabel)
+      .maybeSingle();
+    const { data: regionRow } = await supabase
+      .from("regions")
+      .select("id")
+      .eq("name", regionLabel)
+      .maybeSingle();
+
+    const productId =
+      productRow?.id ??
+      (
+        await supabase
+          .from("products")
+          .insert({ name: productLabel })
+          .select("id")
+          .single()
+      ).data?.id;
+    const regionId =
+      regionRow?.id ??
+      (
+        await supabase
+          .from("regions")
+          .insert({ name: regionLabel, code: regionLabel.slice(0, 3).toUpperCase() })
+          .select("id")
+          .single()
+      ).data?.id;
+
+    if (!productId || !regionId) {
+      setStatus("Unable to save analysis metadata.");
+      return null;
+    }
+
+    const { data: analysis, error } = await supabase
+      .from("analyses")
+      .insert({
+        user_id: sessionData.session.user.id,
+        product_id: productId,
+        region_id: regionId,
+        notes,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    if (analysis?.id && pathways.length) {
+      const pathwayEntries = await Promise.all(
+        pathways.map(async (pathway) => {
+          const { data: existing } = await supabase
+            .from("pathways")
+            .select("id")
+            .eq("name", pathway.name)
+            .maybeSingle();
+          const pathwayId =
+            existing?.id ??
+            (
+              await supabase
+                .from("pathways")
+                .insert({ name: pathway.name })
+                .select("id")
+                .single()
+            ).data?.id;
+          return {
+            analysis_id: analysis.id,
+            pathway_id: pathwayId,
+            probability: pathway.probability,
+            loss_hotspot: pathway.loss,
+          };
+        })
+      );
+
+      await supabase.from("analysis_pathways").insert(pathwayEntries);
+    }
+
+    return analysis?.id ?? null;
   };
 
   const handleAnalyze = async () => {
@@ -187,11 +252,26 @@ export default function Home() {
         throw new Error(data.error || detail || "Analysis failed");
       }
 
-      setSummary(data.summary ?? "");
-      setInferredProduct(data.product ?? "");
-      setInferredRegion(data.region ?? "");
-      setCurrentPathways(data.pathways ?? []);
-      setStatus("Analysis ready.");
+      const pathways = (data.pathways ?? []) as AnalysisPathway[];
+      const resolvedProduct =
+        mode === "ai" ? data.product || productType : productType;
+      const resolvedRegion = mode === "ai" ? data.region || region : region;
+
+      setStatus("Analysis ready. Saving report…");
+
+      const analysisId = await saveAnalysis(
+        pathways,
+        resolvedProduct,
+        resolvedRegion
+      );
+
+      if (analysisId) {
+        setShowModeDialog(false);
+        router.push(`/analyses/${analysisId}`);
+        return;
+      }
+
+      setStatus("Analysis ready, but saving failed.");
     } catch (error) {
       const message =
         error instanceof Error
@@ -200,107 +280,6 @@ export default function Home() {
       setStatus(message);
     } finally {
       setIsAnalyzing(false);
-    }
-  };
-
-  const handleSaveAnalysis = async () => {
-    setStatus("");
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) {
-        window.location.href = "/auth";
-        return;
-      }
-
-      const productName = productType.trim();
-      const regionName = region.trim();
-
-      if (!productName || !regionName) {
-        setStatus("Add product type and region before saving.");
-        return;
-      }
-
-      const { data: productRow } = await supabase
-        .from("products")
-        .select("id")
-        .eq("name", productName)
-        .maybeSingle();
-      const { data: regionRow } = await supabase
-        .from("regions")
-        .select("id")
-        .eq("name", regionName)
-        .maybeSingle();
-
-      const productId =
-        productRow?.id ??
-        (
-          await supabase
-            .from("products")
-            .insert({ name: productName })
-            .select("id")
-            .single()
-        ).data?.id;
-      const regionId =
-        regionRow?.id ??
-        (
-          await supabase
-            .from("regions")
-            .insert({ name: regionName, code: regionName.slice(0, 3).toUpperCase() })
-            .select("id")
-            .single()
-        ).data?.id;
-
-      if (!productId || !regionId) {
-        setStatus("Unable to save analysis metadata.");
-        return;
-      }
-
-      const { data: analysis, error } = await supabase
-        .from("analyses")
-        .insert({
-          user_id: userData.user.id,
-          product_id: productId,
-          region_id: regionId,
-          notes,
-        })
-        .select("id")
-        .single();
-
-      if (error) throw error;
-
-      if (analysis?.id && currentPathways.length) {
-        const pathwayEntries = await Promise.all(
-          currentPathways.map(async (pathway) => {
-            const { data: existing } = await supabase
-              .from("pathways")
-              .select("id")
-              .eq("name", pathway.name)
-              .maybeSingle();
-            const pathwayId =
-              existing?.id ??
-              (
-                await supabase
-                  .from("pathways")
-                  .insert({ name: pathway.name })
-                  .select("id")
-                  .single()
-              ).data?.id;
-            return {
-              analysis_id: analysis.id,
-              pathway_id: pathwayId,
-              probability: pathway.probability,
-              loss_hotspot: pathway.loss,
-            };
-          })
-        );
-
-        await supabase.from("analysis_pathways").insert(pathwayEntries);
-      }
-
-      setStatus("Analysis saved.");
-    } catch (error) {
-      setStatus("Unable to save analysis.");
     }
   };
 
@@ -314,7 +293,7 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
-              Ecopath
+              EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
               Lifecycle Pathway Reconstructor
@@ -325,91 +304,256 @@ export default function Home() {
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Map post-use outcomes</CardTitle>
+        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <Card className="shadow-sm">
+            <CardHeader className="space-y-2">
+              <Badge className="w-fit bg-primary/10 text-primary" variant="secondary">
+                Analysis Builder
+              </Badge>
+              <CardTitle className="text-2xl">Map post-use outcomes</CardTitle>
               <CardDescription>
-                Upload a product image and specify the region for AI analysis.
+                Start an analysis to model recycling, resale, and loss pathways by region.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label className="text-sm text-zinc-700" htmlFor="product-type">
-                    Product type
-                  </Label>
-                  <Input
-                    id="product-type"
-                    placeholder="Smartphone, PET bottle, EV battery"
-                    value={productType}
-                    onChange={(event) => setProductType(event.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-sm text-zinc-700">Region</Label>
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {regions.map((regionName) => (
-                        <SelectItem key={regionName} value={regionName}>
-                          {regionName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm text-zinc-700" htmlFor="product-image">
-                  Product image (optional)
-                </Label>
-                <Input
-                  id="product-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt="Product preview"
-                    className="h-32 w-32 rounded-md border border-zinc-200 object-cover"
-                  />
-                ) : null}
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm text-zinc-700" htmlFor="notes">
-                  Notes (optional)
-                </Label>
-                <textarea
-                  id="notes"
-                  className="min-h-[96px] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
-                  placeholder="E.g., mid-tier Android handset, 2021 release"
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                />
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
+            <CardContent className="grid gap-6">
+              <div className="grid gap-3">
                 <Button
                   className="w-full"
-                  onClick={handleAnalyze}
-                  disabled={!productType || !region || isAnalyzing}
+                  size="lg"
+                  onClick={() => {
+                    setModalStep("mode");
+                    setShowModeDialog(true);
+                  }}
                 >
-                  {isAnalyzing ? "Analyzing…" : "Analyze pathways"}
+                  Start analysis
                 </Button>
-                <Button
-                  className="w-full"
-                  onClick={handleSaveAnalysis}
-                  variant="secondary"
-                  disabled={!currentPathways.length}
-                >
-                  Save analysis
-                </Button>
+                <p className="text-xs text-zinc-500">
+                  Choose quick AI mode (image-first) or manual mode for full control.
+                </p>
               </div>
-              {status ? <p className="text-sm text-zinc-500">{status}</p> : null}
+
+              <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>
+                <DialogContent className="sm:max-w-[640px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {modalStep === "mode"
+                        ? "Choose analysis mode"
+                        : "Provide inputs"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {modalStep === "mode"
+                        ? "We’ll guide you step-by-step."
+                        : mode === "ai"
+                        ? "Upload a product image and pick a region."
+                        : "Enter the product details and region."}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="grid gap-5">
+                    {modalStep === "mode" ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Button
+                          type="button"
+                          className="h-14 w-full gap-2 rounded-md"
+                          onClick={() => {
+                            setMode("ai");
+                            setModalStep("inputs");
+                          }}
+                        >
+                          <Sparkles className="size-4" />
+                          Quick AI mode
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-14 w-full gap-2 rounded-md"
+                          onClick={() => {
+                            setMode("manual");
+                            setModalStep("inputs");
+                          }}
+                        >
+                          <Wrench className="size-4" />
+                          Manual mode
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setModalStep("mode")}
+                          >
+                            Back
+                          </Button>
+                          <span className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                            Step 2 of 2
+                          </span>
+                        </div>
+
+                        {mode === "manual" ? (
+                      <>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="grid gap-2">
+                            <Label className="text-sm text-zinc-700" htmlFor="product-type">
+                              Product type
+                            </Label>
+                            <Input
+                              id="product-type"
+                              placeholder="Smartphone, PET bottle, EV battery"
+                              value={productType}
+                              onChange={(event) => setProductType(event.target.value)}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label className="text-sm text-zinc-700">Region</Label>
+                            <Select
+                              value={region}
+                              onValueChange={(value) => setRegion(value ?? "")}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a region" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {regions.map((regionName) => (
+                                  <SelectItem key={regionName} value={regionName}>
+                                    {regionName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-sm text-zinc-700" htmlFor="description">
+                            Product description
+                          </Label>
+                          <textarea
+                            id="description"
+                            className="min-h-[120px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                            placeholder="Materials, typical use, disposal behavior, etc."
+                            value={description}
+                            onChange={(event) => setDescription(event.target.value)}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="grid gap-2">
+                            <Label className="text-sm text-zinc-700">Region</Label>
+                            <Select
+                              value={region}
+                              onValueChange={(value) => setRegion(value ?? "")}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a region" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {regions.map((regionName) => (
+                                  <SelectItem key={regionName} value={regionName}>
+                                    {regionName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid gap-3">
+                          <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 p-6 transition hover:border-primary/40">
+                            <Label className="flex cursor-pointer flex-col items-center gap-3 text-sm text-zinc-600">
+                              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <UploadCloud className="size-5" />
+                              </div>
+                              <div className="text-center">
+                                <p className="font-medium text-zinc-900">
+                                  Drop a product photo or click to upload
+                                </p>
+                                <p className="text-xs text-zinc-500">
+                                  PNG/JPG up to 10MB
+                                </p>
+                              </div>
+                              <Input
+                                id="product-image"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleImageChange}
+                              />
+                            </Label>
+                          </div>
+                          {imagePreview ? (
+                            <div className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-3">
+                              <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-zinc-200">
+                                <Image
+                                  src={imagePreview}
+                                  alt="Product preview"
+                                  fill
+                                  unoptimized
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-zinc-900">
+                                  Image uploaded
+                                </p>
+                                <p className="text-xs text-zinc-500">
+                                  Ready for AI analysis
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setImagePreview(null);
+                                  setImageDataUrl(null);
+                                }}
+                              >
+                                <X className="size-4" />
+                              </Button>
+                            </div>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="grid gap-2">
+                      <Label className="text-sm text-zinc-700" htmlFor="notes">
+                        Notes (optional)
+                      </Label>
+                      <textarea
+                        id="notes"
+                        className="min-h-[120px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        placeholder="Extra context, intended market, disposal behavior"
+                        value={notes}
+                        onChange={(event) => setNotes(event.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid gap-3">
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={handleAnalyze}
+                        disabled={
+                          isAnalyzing ||
+                          (mode === "manual"
+                            ? !productType || !region || !description
+                            : !imageDataUrl || !region)
+                        }
+                      >
+                        {isAnalyzing ? "Analyzing…" : "Analyze pathways"}
+                      </Button>
+                    </div>
+
+                    {status ? (
+                      <p className="text-sm text-zinc-500">{status}</p>
+                    ) : null}
+                      </>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
 
@@ -447,73 +591,6 @@ export default function Home() {
         </section>
 
         <Separator />
-
-        <section className="grid gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Results</h2>
-            <Badge variant="secondary">
-              {productType || "Product"} · {region || "Region"}
-            </Badge>
-          </div>
-          {summary ? (
-            <Card>
-              <CardContent className="py-4 text-sm text-zinc-600">
-                {summary}
-              </CardContent>
-            </Card>
-          ) : null}
-          {currentPathways.length ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {currentPathways.map((pathway) => (
-                <Card key={pathway.name}>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      {pathway.name}
-                    </CardTitle>
-                    <CardDescription>
-                      Estimated probability: {pathway.probability}%
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-600">Loss hotspot</span>
-                    <Badge variant="outline">{pathway.loss}</Badge>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-sm text-zinc-600">
-                Run an AI analysis to see pathway results.
-              </CardContent>
-            </Card>
-          )}
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pathway flow</CardTitle>
-              <CardDescription>
-                Visualize how materials move through the system.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PathwaySankey data={sankeyData} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Probability breakdown</CardTitle>
-              <CardDescription>
-                Distribution of outcomes for the selected region.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PathwayBars data={barData} />
-            </CardContent>
-          </Card>
-        </section>
 
         <section className="grid gap-4">
           <div className="flex items-center justify-between">
