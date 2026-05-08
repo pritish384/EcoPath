@@ -4,6 +4,37 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Info } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip as UiTooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -25,6 +56,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+const Explanation = ({
+  plain,
+  technical,
+}: {
+  plain: string;
+  technical: string;
+}) => (
+  <UiTooltip>
+    <TooltipTrigger
+      className="mt-3 inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white p-1 text-zinc-600 shadow-sm transition hover:border-primary/40"
+      aria-label="Explanation"
+    >
+      <Info className="size-3.5 text-primary" />
+    </TooltipTrigger>
+    <TooltipContent className="max-w-xs text-xs">
+      <p>
+        <span className="font-semibold">Plain:</span> {plain}
+      </p>
+      <p className="mt-1">
+        <span className="font-semibold">Technical:</span> {technical}
+      </p>
+    </TooltipContent>
+  </UiTooltip>
+);
 
 const PathwayBars = dynamic(
   () => import("@/components/pathway-bars").then((mod) => mod.PathwayBars),
@@ -61,6 +117,7 @@ export default function AnalysisDetailPage() {
   const [status, setStatus] = useState("Loading analysis…");
   const [isDeleting, setIsDeleting] = useState(false);
   const [report, setReport] = useState<Record<string, any> | null>(null);
+  const [activePathway, setActivePathway] = useState(0);
 
   const sortedPathways = useMemo(() => {
     return [...pathways].sort((a, b) => b.probability - a.probability);
@@ -80,6 +137,53 @@ export default function AnalysisDetailPage() {
       value: row.probability,
     }));
   }, [pathways]);
+
+  const circularityScore =
+    typeof report?.circularity_score === "number"
+      ? report.circularity_score
+      : null;
+  const leakagePercent =
+    typeof report?.waste_leakage_detector?.leakage_percent === "number"
+      ? report.waste_leakage_detector.leakage_percent
+      : null;
+  const communityScore =
+    typeof report?.community_waste_score?.score === "number"
+      ? report.community_waste_score.score
+      : null;
+  const impactRecycle = report?.impact_simulator?.recycle?.co2_kg ?? null;
+  const impactLandfill = report?.impact_simulator?.landfill?.co2_kg ?? null;
+  const impactDelta = report?.impact_simulator?.delta_kg ?? null;
+
+  const scenarioChartData = useMemo(() => {
+    const items = report?.what_if_scenario_engine ?? [];
+    return items
+      .map((scenario: { scenario: string; expected_change: string }) => {
+        const match = scenario.expected_change?.match(/-?\d+(?:\.\d+)?/);
+        return {
+          name: scenario.scenario,
+          value: match ? Number(match[0]) : 0,
+          label: scenario.expected_change,
+        };
+      })
+      .slice(0, 6);
+  }, [report]);
+
+  const futureTrend = useMemo(() => {
+    const parseNum = (value?: string) => {
+      if (!value) return null;
+      const match = value.match(/-?\d+(?:\.\d+)?/);
+      return match ? Number(match[0]) : null;
+    };
+    const dayVal = parseNum(report?.waste_future_predictor?.day);
+    const weekVal = parseNum(report?.waste_future_predictor?.week);
+    const yearVal = parseNum(report?.waste_future_predictor?.year);
+    const fallback = circularityScore ?? 50;
+    return [
+      { name: "Day", value: dayVal ?? Math.round(fallback * 0.3) },
+      { name: "Week", value: weekVal ?? Math.round(fallback * 0.6) },
+      { name: "Year", value: yearVal ?? Math.round(fallback * 0.9) },
+    ];
+  }, [report, circularityScore]);
 
   const sankeyData = useMemo(() => {
     if (!pathways.length) return undefined;
@@ -146,7 +250,10 @@ export default function AnalysisDetailPage() {
         setPathways(
           (pathwayRes.data ?? []).map((row) => ({
             id: row.pathway_id,
-            name: row.pathways?.name ?? "Pathway",
+            name:
+              (Array.isArray(row.pathways)
+                ? row.pathways[0]?.name
+                : row.pathways?.name) ?? "Pathway",
             probability: row.probability,
             loss: row.loss_hotspot,
           }))
@@ -161,12 +268,16 @@ export default function AnalysisDetailPage() {
     if (analysisId) load();
   }, [analysisId]);
 
+  useEffect(() => {
+    setActivePathway(0);
+  }, [sortedPathways.length]);
+
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-white">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-background">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
               EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
@@ -237,7 +348,8 @@ export default function AnalysisDetailPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10">
+
         {status ? (
           <Card>
             <CardContent className="py-8 text-sm text-zinc-600">
@@ -245,9 +357,15 @@ export default function AnalysisDetailPage() {
             </CardContent>
           </Card>
         ) : (
-          <>
-            {report?.summary ? (
-              <Card>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="mb-6 grid w-full grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger value="pathways">Pathways</TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview" className="space-y-6">
+              <section className="grid gap-4 lg:grid-cols-4">
+              <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle>AI summary</CardTitle>
                   <CardDescription>
@@ -255,10 +373,165 @@ export default function AnalysisDetailPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-sm text-zinc-700">
-                  {report.summary}
+                  {report?.summary ??
+                    "Run an analysis to generate the AI summary report."}
+                  <Explanation
+                    plain="A short story of what likely happens to this product after use."
+                    technical="Narrative summary distilled from predicted pathway probabilities."
+                  />
                 </CardContent>
               </Card>
-            ) : null}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Circularity score</CardTitle>
+                  <CardDescription>0–100 sustainability index.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                  <div className="h-[140px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "Score", value: circularityScore ?? 0 },
+                            {
+                              name: "Remaining",
+                              value: 100 - (circularityScore ?? 0),
+                            },
+                          ]}
+                          innerRadius={50}
+                          outerRadius={70}
+                          startAngle={90}
+                          endAngle={-270}
+                        >
+                          <Cell fill="#2563eb" />
+                          <Cell fill="#e2e8f0" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-center text-sm font-medium text-zinc-900">
+                    {circularityScore ?? "–"}
+                  </p>
+                  <Progress value={circularityScore ?? 0} className="w-full" />
+                  <Explanation
+                    plain="Higher score means more material stays in reuse or recycling loops."
+                    technical="Composite index derived from predicted recovery vs loss pathways."
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Waste leakage</CardTitle>
+                  <CardDescription>Estimated leakage to landfill.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                  <div className="h-[140px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "Leakage", value: leakagePercent ?? 0 },
+                            {
+                              name: "Captured",
+                              value: 100 - (leakagePercent ?? 0),
+                            },
+                          ]}
+                          innerRadius={50}
+                          outerRadius={70}
+                          startAngle={90}
+                          endAngle={-270}
+                        >
+                          <Cell fill="#f97316" />
+                          <Cell fill="#e2e8f0" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-center text-sm font-medium text-zinc-900">
+                    {leakagePercent ?? "–"}%
+                  </p>
+                  <Progress value={leakagePercent ?? 0} className="w-full" />
+                  <Explanation
+                    plain="Share of waste likely ending up in landfill or loss."
+                    technical="Leakage percent inferred from loss-heavy pathways."
+                  />
+                </CardContent>
+              </Card>
+            </section>
+
+            <section className="grid gap-4 lg:grid-cols-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Community score</CardTitle>
+                  <CardDescription>
+                    Local efficiency score and rationale.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                  <div className="h-[140px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "Score", value: communityScore ?? 0 },
+                            { name: "Remaining", value: 100 - (communityScore ?? 0) },
+                          ]}
+                          innerRadius={50}
+                          outerRadius={70}
+                          startAngle={90}
+                          endAngle={-270}
+                        >
+                          <Cell fill="#16a34a" />
+                          <Cell fill="#e2e8f0" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-center text-sm font-medium text-zinc-900">
+                    {communityScore ?? "–"}/100
+                  </p>
+                  <Progress value={communityScore ?? 0} className="w-full" />
+                  <Explanation
+                    plain="Overall local waste system effectiveness score."
+                    technical="Heuristic score combining recovery and leakage indicators."
+                  />
+                </CardContent>
+              </Card>
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Impact simulator</CardTitle>
+                  <CardDescription>CO₂ impact comparison.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex h-[260px] flex-col">
+                  <div className="flex-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { name: "Recycle", value: impactRecycle ?? 0 },
+                          { name: "Landfill", value: impactLandfill ?? 0 },
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-600">
+                    Delta: {impactDelta ?? "–"} kg CO₂
+                  </p>
+                  <Explanation
+                    plain="Compares emissions if recycled vs sent to landfill."
+                    technical="LCA-style CO₂ estimate using typical factors."
+                  />
+                </CardContent>
+              </Card>
+            </section>
 
             <Card className="bg-white">
               <CardHeader>
@@ -303,8 +576,16 @@ export default function AnalysisDetailPage() {
                 </CardContent>
               </Card>
             ) : null}
+            </TabsContent>
 
-            <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <TabsContent value="insights" className="space-y-6">
+              <Accordion type="multiple" className="space-y-4">
+                <AccordionItem value="insights-key" className="border-none">
+                  <AccordionTrigger className="rounded-xl border border-zinc-200 px-4">
+                    Key insights & hotspots
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4">
+                    <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
               <Card>
                 <CardHeader>
                   <CardTitle>Key insights</CardTitle>
@@ -364,6 +645,9 @@ export default function AnalysisDetailPage() {
                 </CardContent>
               </Card>
             </section>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
             <Card>
               <CardHeader>
@@ -394,23 +678,23 @@ export default function AnalysisDetailPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="grid gap-2 rounded-lg border border-zinc-200 px-4 py-3">
                     <span className="text-xs uppercase text-zinc-400">Day</span>
-                    <p className="mt-1">
+                    <p>
                       {report?.waste_future_predictor?.day ??
                         "Day-level outlook will appear after AI analysis."}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="grid gap-2 rounded-lg border border-zinc-200 px-4 py-3">
                     <span className="text-xs uppercase text-zinc-400">Week</span>
-                    <p className="mt-1">
+                    <p>
                       {report?.waste_future_predictor?.week ??
                         "Week-level outlook will appear after AI analysis."}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="grid gap-2 rounded-lg border border-zinc-200 px-4 py-3">
                     <span className="text-xs uppercase text-zinc-400">Year</span>
-                    <p className="mt-1">
+                    <p>
                       {report?.waste_future_predictor?.year ??
                         "Year-level outlook will appear after AI analysis."}
                     </p>
@@ -428,16 +712,20 @@ export default function AnalysisDetailPage() {
                 <CardContent className="grid gap-3 text-sm text-zinc-700">
                   <div className="rounded-lg border border-zinc-200 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Observed habits</p>
-                    <ul className="mt-2 list-disc space-y-1 pl-4">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {(report?.behavior_based_suggestion?.habits ?? []).map(
                         (item: string) => (
-                          <li key={item}>{item}</li>
+                          <Badge key={item} variant="secondary">
+                            {item}
+                          </Badge>
                         )
                       )}
                       {!report?.behavior_based_suggestion?.habits?.length ? (
-                        <li>Habits will appear after AI analysis.</li>
+                        <span className="text-xs text-zinc-500">
+                          Habits will appear after AI analysis.
+                        </span>
                       ) : null}
-                    </ul>
+                    </div>
                   </div>
                   <div className="rounded-lg border border-zinc-200 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Suggestions</p>
@@ -465,14 +753,23 @@ export default function AnalysisDetailPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <ol className="list-decimal space-y-2 pl-5">
-                    {(report?.waste_flow_map?.steps ?? []).map((step: string) => (
-                      <li key={step}>{step}</li>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(report?.waste_flow_map?.steps ?? []).map(
+                      (step: string, idx: number, arr: string[]) => (
+                        <div key={step} className="flex items-center gap-2">
+                          <Badge variant="secondary">{step}</Badge>
+                          {idx < arr.length - 1 ? (
+                            <span className="text-zinc-400">→</span>
+                          ) : null}
+                        </div>
+                      )
+                    )}
                     {!report?.waste_flow_map?.steps?.length ? (
-                      <li>Flow steps will appear after AI analysis.</li>
+                      <span className="text-xs text-zinc-500">
+                        Flow steps will appear after AI analysis.
+                      </span>
                     ) : null}
-                  </ol>
+                  </div>
                   {report?.waste_flow_map?.notes ? (
                     <p className="text-xs text-zinc-500">
                       {report.waste_flow_map.notes}
@@ -544,11 +841,27 @@ export default function AnalysisDetailPage() {
                     Probabilistic range from Monte Carlo style estimate.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-2 text-sm text-zinc-700">
-                  <p>
-                    Range: {report?.uncertainty_output?.range_low ?? "–"}% to {""}
-                    {report?.uncertainty_output?.range_high ?? "–"}%
-                  </p>
+                <CardContent className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        {
+                          name: "Low",
+                          value: report?.uncertainty_output?.range_low ?? 0,
+                        },
+                        {
+                          name: "High",
+                          value: report?.uncertainty_output?.range_high ?? 0,
+                        },
+                      ]}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#64748b" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                   {report?.uncertainty_output?.notes ? (
                     <p className="text-xs text-zinc-500">
                       {report.uncertainty_output.notes}
@@ -558,7 +871,7 @@ export default function AnalysisDetailPage() {
               </Card>
             </section>
 
-            <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <section className="grid gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Waste leakage detector</CardTitle>
@@ -580,37 +893,6 @@ export default function AnalysisDetailPage() {
                       <li>Leakage drivers will appear after AI analysis.</li>
                     ) : null}
                   </ul>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>What-if scenario engine</CardTitle>
-                  <CardDescription>
-                    Simulated changes under different interventions.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  {(report?.what_if_scenario_engine ?? []).map(
-                    (scenario: { scenario: string; expected_change: string }, idx: number) => (
-                      <div
-                        key={`${scenario.scenario}-${idx}`}
-                        className="rounded-lg border border-zinc-200 px-4 py-3"
-                      >
-                        <p className="font-medium text-zinc-900">
-                          {scenario.scenario}
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                          {scenario.expected_change}
-                        </p>
-                      </div>
-                    )
-                  )}
-                  {!report?.what_if_scenario_engine?.length ? (
-                    <div className="rounded-lg border border-zinc-200 px-4 py-3">
-                      Scenario impacts will appear after AI analysis.
-                    </div>
-                  ) : null}
                 </CardContent>
               </Card>
             </section>
@@ -646,25 +928,6 @@ export default function AnalysisDetailPage() {
             <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
               <Card>
                 <CardHeader>
-                  <CardTitle>Community waste score</CardTitle>
-                  <CardDescription>
-                    Local efficiency score and rationale.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-2 text-sm text-zinc-700">
-                  <p>
-                    Score: {report?.community_waste_score?.score ?? "–"}/100
-                  </p>
-                  {report?.community_waste_score?.rationale ? (
-                    <p className="text-xs text-zinc-500">
-                      {report.community_waste_score.rationale}
-                    </p>
-                  ) : null}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle>Reverse supply chain suggestions</CardTitle>
                   <CardDescription>
                     Resale, repair, and reuse opportunities.
@@ -684,39 +947,125 @@ export default function AnalysisDetailPage() {
                 </CardContent>
               </Card>
             </section>
+            </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Pathway outcomes</CardTitle>
-                <CardDescription>
-                  Saved probability split for this analysis.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                {pathways.length ? (
-                  sortedPathways.map((row, index) => (
-                    <div
-                      key={`${row.id}-${index}`}
-                      className="flex items-center justify-between rounded-md border border-zinc-200 px-4 py-3"
-                    >
-                      <div>
-                        <p className="font-medium text-zinc-900">{row.name}</p>
-                        {row.loss ? (
-                          <p className="text-sm text-zinc-500">
-                            Loss hotspot: {row.loss}
+            <TabsContent value="pathways" className="space-y-6">
+              <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pathway flow view</CardTitle>
+                    <CardDescription>
+                      Step through the most likely pathway outcomes.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-3">
+                    {sortedPathways.length ? (
+                      <ol className="space-y-2">
+                        {sortedPathways.map((row, index) => {
+                          const isActive = index === activePathway;
+                          return (
+                            <li key={`${row.id}-${index}`}>
+                              <button
+                                type="button"
+                                onClick={() => setActivePathway(index)}
+                                className={`flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left transition ${
+                                  isActive
+                                    ? "border-primary/60 bg-primary/5"
+                                    : "border-zinc-200 hover:border-primary/30"
+                                }`}
+                              >
+                                <span
+                                  className={`mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                    isActive
+                                      ? "bg-primary text-white"
+                                      : "bg-zinc-100 text-zinc-600"
+                                  }`}
+                                >
+                                  {index + 1}
+                                </span>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <p className="font-medium text-zinc-900">
+                                      {row.name}
+                                    </p>
+                                    <Badge variant="secondary">
+                                      {row.probability}%
+                                    </Badge>
+                                  </div>
+                                  {row.loss ? (
+                                    <p className="text-xs text-zinc-500">
+                                      Loss hotspot: {row.loss}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    ) : (
+                      <p className="text-sm text-zinc-600">
+                        No pathway data saved.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Selected pathway</CardTitle>
+                    <CardDescription>
+                      Details for the currently highlighted step.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 text-sm text-zinc-700">
+                    {sortedPathways.length ? (
+                      <>
+                        <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                          <p className="text-xs uppercase text-zinc-400">
+                            Pathway
                           </p>
-                        ) : null}
-                      </div>
-                      <Badge variant="secondary">{row.probability}%</Badge>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-zinc-600">
-                    No pathway data saved.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                          <p className="mt-1 text-base font-semibold text-zinc-900">
+                            {sortedPathways[activePathway]?.name}
+                          </p>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                            <p className="text-xs uppercase text-zinc-400">
+                              Probability
+                            </p>
+                            <p className="mt-1 text-sm font-medium text-zinc-900">
+                              {sortedPathways[activePathway]?.probability ?? "–"}%
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                            <p className="text-xs uppercase text-zinc-400">
+                              Loss hotspot
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-700">
+                              {sortedPathways[activePathway]?.loss ?? "None flagged"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                          <p className="text-xs uppercase text-zinc-400">
+                            Notes
+                          </p>
+                          <p className="mt-1 text-sm text-zinc-600">
+                            Use this step to review assumptions for this pathway
+                            and confirm if the probability aligns with field
+                            observations.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-zinc-600">
+                        Select a pathway to see details.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </section>
 
             <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <Card>
@@ -738,7 +1087,8 @@ export default function AnalysisDetailPage() {
                 </CardContent>
               </Card>
             </section>
-          </>
+            </TabsContent>
+          </Tabs>
         )}
       </main>
     </div>

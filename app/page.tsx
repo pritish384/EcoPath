@@ -15,7 +15,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Sparkles, UploadCloud, Wrench, X } from "lucide-react";
+import {
+  Bot,
+  Brain,
+  MapPinned,
+  Recycle,
+  Sparkles,
+  UploadCloud,
+  Wrench,
+  X,
+  Zap,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -132,7 +142,8 @@ export default function Home() {
   const saveAnalysis = async (
     pathways: AnalysisPathway[],
     productName: string,
-    regionName: string
+    regionName: string,
+    report: Record<string, unknown>
   ) => {
     const supabase = createSupabaseBrowserClient();
     const { data: sessionData } = await supabase.auth.getSession();
@@ -191,6 +202,7 @@ export default function Home() {
         product_id: productId,
         region_id: regionId,
         notes,
+        report,
       })
       .select("id")
       .single();
@@ -257,12 +269,34 @@ export default function Home() {
         mode === "ai" ? data.product || productType : productType;
       const resolvedRegion = mode === "ai" ? data.region || region : region;
 
+      const report = {
+        summary: data.summary ?? "",
+        product: resolvedProduct,
+        region: resolvedRegion,
+        pathways,
+        waste_future_predictor: data.waste_future_predictor ?? null,
+        behavior_based_suggestion: data.behavior_based_suggestion ?? null,
+        circularity_score: data.circularity_score ?? null,
+        waste_flow_map: data.waste_flow_map ?? null,
+        impact_simulator: data.impact_simulator ?? null,
+        hidden_material_flow: data.hidden_material_flow ?? null,
+        uncertainty_output: data.uncertainty_output ?? null,
+        waste_leakage_detector: data.waste_leakage_detector ?? null,
+        what_if_scenario_engine: data.what_if_scenario_engine ?? null,
+        product_aware_prediction: data.product_aware_prediction ?? null,
+        explainable_ai_output: data.explainable_ai_output ?? null,
+        community_waste_score: data.community_waste_score ?? null,
+        reverse_supply_chain_suggestion:
+          data.reverse_supply_chain_suggestion ?? null,
+      };
+
       setStatus("Analysis ready. Saving report…");
 
       const analysisId = await saveAnalysis(
         pathways,
         resolvedProduct,
-        resolvedRegion
+        resolvedRegion,
+        report
       );
 
       if (analysisId) {
@@ -288,11 +322,11 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-white">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-background">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
               EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -588,6 +622,178 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
+        </section>
+
+        <Separator />
+
+        <section className="grid gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">Smart disposal platform features</h2>
+            <p className="text-sm text-muted-foreground">
+              Product ideas we can build into EcoPath next.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Link href="/disposal" className="block">
+              <Card className="transition-transform hover:-translate-y-0.5">
+                <CardHeader className="flex flex-row items-start gap-3">
+                  <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                    <Recycle className="size-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">
+                      Smart Disposal Pathway Generator
+                    </CardTitle>
+                    <CardDescription>
+                      Guided steps tailored to any item.
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  Recycle, reuse, donate, sell, compost, or hazardous disposal
+                  pathways as a guided flow.
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/locations" className="block">
+              <Card className="transition-transform hover:-translate-y-0.5">
+                <CardHeader className="flex flex-row items-start gap-3">
+                  <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                    <MapPinned className="size-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Location-Based Suggestions</CardTitle>
+                    <CardDescription>
+                      Nearby drop-offs and facilities.
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  Recycling centers, e-waste facilities, scrap dealers, donation
+                  centers, and compost units with maps, hours, and directions.
+                </CardContent>
+              </Card>
+            </Link>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <Sparkles className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Eco Score</CardTitle>
+                <CardDescription>
+                  Instant sustainability rating.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Recyclability score, environmental impact level, and toxicity
+                rating for quick decisions.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <Zap className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Quick Actions</CardTitle>
+                <CardDescription>
+                  One-tap decisions.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Recycle, reuse, donate, sell, compost, or hazardous disposal —
+                each generates a full action pathway.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <Bot className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">AI Chat Assistant</CardTitle>
+                <CardDescription>
+                  Conversational guidance.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Ask questions like “Can I recycle pizza boxes?” and get
+                personalized answers.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <Sparkles className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Reuse Suggestions</CardTitle>
+                <CardDescription>
+                  “Can this be reused?” ideas.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                DIY reuse ideas, upcycling suggestions, donation options, and
+                resale platforms.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <UploadCloud className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Community Uploads</CardTitle>
+                <CardDescription>
+                  Tips from locals.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Recycling tips, disposal centers, eco hacks, and before/after
+                proof to build network effects.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <Wrench className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Multi-Material Breakdown</CardTitle>
+                <CardDescription>
+                  Component-level disposal.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Breaks items into components and assigns disposal categories per
+                part.
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                  <Brain className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">AI-Powered Categorization</CardTitle>
+                <CardDescription>
+                  Automatic waste classification.
+                </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Labels items as recyclable, hazardous, compostable, or mixed from
+                image/text input.
+              </CardContent>
+            </Card>
+          </div>
         </section>
 
         <Separator />

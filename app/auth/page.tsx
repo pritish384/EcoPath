@@ -43,7 +43,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 px-6 py-12">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-5xl items-center justify-center">
-        <Card className="w-full overflow-hidden shadow-xl">
+        <Card className="w-full overflow-hidden shadow-xl p-0">
           <div className="grid items-stretch md:grid-cols-[1.05fr_0.95fr]">
             <CardHeader className="gap-4 p-10">
               <div className="flex items-center gap-3">

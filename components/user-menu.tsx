@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function UserMenu() {
   const [email, setEmail] = useState<string | null>(null);
@@ -26,20 +27,27 @@ export function UserMenu() {
 
   if (loading) {
     return (
-      <div className="text-sm text-zinc-500">Checking session…</div>
+      <div className="flex items-center gap-3 text-sm text-zinc-500">
+        <ThemeToggle />
+        Checking session…
+      </div>
     );
   }
 
   if (!email) {
     return (
-      <Link href="/auth" className={buttonVariants({ variant: "outline" })}>
-        Sign in
-      </Link>
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+        <Link href="/auth" className={buttonVariants({ variant: "outline" })}>
+          Sign in
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="flex items-center gap-3">
+      <ThemeToggle />
       <Badge variant="secondary">{email}</Badge>
       <button
         type="button"

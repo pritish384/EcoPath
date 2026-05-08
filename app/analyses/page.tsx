@@ -110,11 +110,11 @@ export default function AnalysesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-white">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-background">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
               EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -137,7 +137,7 @@ export default function AnalysesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Recent</h2>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-muted-foreground">
               Saved runs tied to your account.
             </p>
           </div>
@@ -195,7 +195,7 @@ export default function AnalysesPage() {
           </div>
         ) : (
           <Card>
-            <CardContent className="py-8 text-sm text-zinc-600">
+            <CardContent className="py-8 text-sm text-muted-foreground">
               {status || "No analyses saved yet."}
             </CardContent>
           </Card>
