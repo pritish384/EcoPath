@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = `You are an expert in circular economy and waste systems.\n\nTask: Given a product type and region, map all possible post-use pathways (recycling, landfill, informal recovery, resale/refurb, etc.), estimate the probability of each pathway in the region, and highlight where materials are lost. If product or region are missing, infer them from the image and context. Then generate the extended insights fields.\n\nReturn STRICT JSON only with this schema:\n{\n  \"summary\": string,\n  \"product\": string,\n  \"region\": string,\n  \"pathways\": [\n    {\n      \"name\": string,\n      \"probability\": number,\n      \"loss\": string\n    }\n  ],\n  \"waste_future_predictor\": { \"day\": string, \"week\": string, \"year\": string },\n  \"behavior_based_suggestion\": { \"habits\": string[], \"suggestions\": string[] },\n  \"circularity_score\": number,\n  \"waste_flow_map\": { \"steps\": string[], \"notes\": string },\n  \"impact_simulator\": { \"recycle\": { \"co2_kg\": number, \"notes\": string }, \"landfill\": { \"co2_kg\": number, \"notes\": string }, \"delta_kg\": number },\n  \"hidden_material_flow\": string[],\n  \"uncertainty_output\": { \"range_low\": number, \"range_high\": number, \"notes\": string },\n  \"waste_leakage_detector\": { \"leakage_percent\": number, \"drivers\": string[] },\n  \"what_if_scenario_engine\": [ { \"scenario\": string, \"expected_change\": string } ],\n  \"product_aware_prediction\": string,\n  \"explainable_ai_output\": string,\n  \"community_waste_score\": { \"score\": number, \"rationale\": string },\n  \"reverse_supply_chain_suggestion\": string[]\n}\n\nRules: probabilities must sum to ~100 (±2). Use 3-6 pathways. Keep loss short. Make numeric values realistic and provide concise text.\n\nInput:\nProduct: ${productType ?? ""}\nRegion: ${region ?? ""}\nDescription: ${description ?? ""}\nNotes: ${notes ?? ""}`;
+    const prompt = `You are an expert in circular economy and waste systems.\n\nTask: Given a product type and region, map all possible post-use pathways (recycling, landfill, informal recovery, resale/refurb, etc.), estimate the probability of each pathway in the region, and highlight where materials are lost. If product or region are missing, infer them from the image and context. Then generate the extended insights fields.\n\nReturn STRICT JSON only with this schema:\n{\n  \"summary\": string,\n  \"product\": string,\n  \"region\": string,\n  \"pathways\": [\n    {\n      \"name\": string,\n      \"probability\": number,\n      \"loss\": string\n    }\n  ],\n  \"waste_future_predictor\": { \"day\": string, \"week\": string, \"year\": string },\n  \"behavior_based_suggestion\": { \"habits\": string[], \"suggestions\": string[] },\n  \"circularity_score\": number,\n  \"waste_flow_map\": { \"steps\": string[], \"notes\": string },\n  \"impact_simulator\": { \"recycle\": { \"co2_kg\": number, \"notes\": string }, \"landfill\": { \"co2_kg\": number, \"notes\": string }, \"delta_kg\": number },\n  \"hidden_material_flow\": string[],\n  \"uncertainty_output\": { \"range_low\": number, \"range_high\": number, \"notes\": string },\n  \"waste_leakage_detector\": { \"leakage_percent\": number, \"drivers\": string[] },\n  \"what_if_scenario_engine\": [ { \"scenario\": string, \"expected_change\": string } ],\n  \"product_aware_prediction\": string,\n  \"explainable_ai_output\": string,\n  \"community_waste_score\": { \"score\": number, \"rationale\": string },\n  \"reverse_supply_chain_suggestion\": string[],\n  \"eco_score\": {\n    \"overall\": number,\n    \"recyclability_score\": number,\n    \"environmental_impact_score\": number,\n    \"toxicity_score\": number,\n    \"recyclability_label\": \"High\" | \"Medium\" | \"Low\",\n    \"impact_label\": \"Low\" | \"Medium\" | \"High\",\n    \"toxicity_label\": \"Low\" | \"Medium\" | \"High\"\n  }\n}\n\nRules: probabilities must sum to ~100 (±2). Use 3-6 pathways. Keep loss short. Make numeric values realistic and provide concise text.\nEco Score rules:\n- recyclability_score, environmental_impact_score, toxicity_score are each 0..100\n- overall = round(0.40*recyclability_score + 0.35*environmental_impact_score + 0.25*toxicity_score)\n- Label mapping:\n  - recyclability_label: High (>=70), Medium (40-69), Low (<40)\n  - impact_label: Low (environmental_impact_score>=70), Medium (40-69), High (<40)\n  - toxicity_label: Low (toxicity_score>=70), Medium (40-69), High (<40)\n\nInput:\nProduct: ${productType ?? ""}\nRegion: ${region ?? ""}\nDescription: ${description ?? ""}\nNotes: ${notes ?? ""}`;
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -131,6 +131,38 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    const clamp = (value: unknown) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return 0;
+      return Math.max(0, Math.min(100, Math.round(n)));
+    };
+
+    const toBand = (score: number, invert = false): "High" | "Medium" | "Low" => {
+      if (score >= 70) return invert ? "Low" : "High";
+      if (score >= 40) return "Medium";
+      return invert ? "High" : "Low";
+    };
+
+    const baseEco = parsed?.eco_score ?? {};
+    const recyclabilityScore = clamp(baseEco.recyclability_score);
+    const environmentalImpactScore = clamp(baseEco.environmental_impact_score);
+    const toxicityScore = clamp(baseEco.toxicity_score);
+    const ecoOverall = clamp(
+      0.4 * recyclabilityScore +
+        0.35 * environmentalImpactScore +
+        0.25 * toxicityScore
+    );
+
+    parsed.eco_score = {
+      overall: ecoOverall,
+      recyclability_score: recyclabilityScore,
+      environmental_impact_score: environmentalImpactScore,
+      toxicity_score: toxicityScore,
+      recyclability_label: toBand(recyclabilityScore, false),
+      impact_label: toBand(environmentalImpactScore, true),
+      toxicity_label: toBand(toxicityScore, true),
+    };
 
     return NextResponse.json(parsed);
   } catch (error) {

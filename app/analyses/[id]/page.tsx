@@ -149,6 +149,23 @@ export default function AnalysisDetailPage() {
   const impactLandfill = report?.impact_simulator?.landfill?.co2_kg ?? null;
   const impactDelta = report?.impact_simulator?.delta_kg ?? null;
 
+  const ecoOverall =
+    typeof report?.eco_score?.overall === "number"
+      ? report.eco_score.overall
+      : null;
+  const ecoRecyclability =
+    typeof report?.eco_score?.recyclability_score === "number"
+      ? report.eco_score.recyclability_score
+      : null;
+  const ecoImpact =
+    typeof report?.eco_score?.environmental_impact_score === "number"
+      ? report.eco_score.environmental_impact_score
+      : null;
+  const ecoToxicity =
+    typeof report?.eco_score?.toxicity_score === "number"
+      ? report.eco_score.toxicity_score
+      : null;
+
   const scenarioChartData = useMemo(() => {
     const items = report?.what_if_scenario_engine ?? [];
     return items
@@ -345,6 +362,56 @@ export default function AnalysisDetailPage() {
             </TabsList>
             <TabsContent value="overview" className="space-y-6">
               <section className="grid gap-4 lg:grid-cols-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Eco score</CardTitle>
+                  <CardDescription>Weighted sustainability index.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                  <div className="h-[140px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "Score", value: ecoOverall ?? 0 },
+                            {
+                              name: "Remaining",
+                              value: 100 - (ecoOverall ?? 0),
+                            },
+                          ]}
+                          innerRadius={50}
+                          outerRadius={70}
+                          startAngle={90}
+                          endAngle={-270}
+                        >
+                          <Cell fill="#8b5cf6" />
+                          <Cell fill="#e2e8f0" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-center text-sm font-medium text-zinc-900">
+                    {ecoOverall ?? "–"}/100
+                  </p>
+                  <Progress value={ecoOverall ?? 0} className="w-full" />
+                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                    <Badge variant="secondary">
+                      Recyclability: {report?.eco_score?.recyclability_label ?? "–"}
+                    </Badge>
+                    <Badge variant="secondary">
+                      Impact: {report?.eco_score?.impact_label ?? "–"}
+                    </Badge>
+                    <Badge variant="secondary">
+                      Toxicity: {report?.eco_score?.toxicity_label ?? "–"}
+                    </Badge>
+                  </div>
+                  <Explanation
+                    plain="Quick combined score of recyclability, impact, and toxicity."
+                    technical="Overall = 40% recyclability + 35% environmental impact + 25% toxicity."
+                  />
+                </CardContent>
+              </Card>
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle>AI summary</CardTitle>
@@ -442,6 +509,35 @@ export default function AnalysisDetailPage() {
             </section>
 
             <section className="grid gap-4 lg:grid-cols-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Eco score components</CardTitle>
+                  <CardDescription>Underlying metric values.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 text-sm text-zinc-700">
+                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <span>Recyclability</span>
+                      <Badge variant="secondary">{ecoRecyclability ?? "–"}/100</Badge>
+                    </div>
+                    <Progress value={ecoRecyclability ?? 0} className="mt-2" />
+                  </div>
+                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <span>Environmental impact</span>
+                      <Badge variant="secondary">{ecoImpact ?? "–"}/100</Badge>
+                    </div>
+                    <Progress value={ecoImpact ?? 0} className="mt-2" />
+                  </div>
+                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <span>Toxicity safety</span>
+                      <Badge variant="secondary">{ecoToxicity ?? "–"}/100</Badge>
+                    </div>
+                    <Progress value={ecoToxicity ?? 0} className="mt-2" />
+                  </div>
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle>Community score</CardTitle>
