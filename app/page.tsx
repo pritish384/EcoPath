@@ -628,10 +628,7 @@ export default function Home() {
 
         <section className="grid gap-4">
           <div>
-            <h2 className="text-xl font-semibold">Smart disposal platform features</h2>
-            <p className="text-sm text-muted-foreground">
-              Product ideas we can build into EcoPath next.
-            </p>
+            <h2 className="text-xl font-semibold">Smart disposal platform features</h2> 
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Link href="/disposal" className="block">

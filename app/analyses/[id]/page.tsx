@@ -5,14 +5,10 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -34,7 +30,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -168,23 +163,6 @@ export default function AnalysisDetailPage() {
       .slice(0, 6);
   }, [report]);
 
-  const futureTrend = useMemo(() => {
-    const parseNum = (value?: string) => {
-      if (!value) return null;
-      const match = value.match(/-?\d+(?:\.\d+)?/);
-      return match ? Number(match[0]) : null;
-    };
-    const dayVal = parseNum(report?.waste_future_predictor?.day);
-    const weekVal = parseNum(report?.waste_future_predictor?.week);
-    const yearVal = parseNum(report?.waste_future_predictor?.year);
-    const fallback = circularityScore ?? 50;
-    return [
-      { name: "Day", value: dayVal ?? Math.round(fallback * 0.3) },
-      { name: "Week", value: weekVal ?? Math.round(fallback * 0.6) },
-      { name: "Year", value: yearVal ?? Math.round(fallback * 0.9) },
-    ];
-  }, [report, circularityScore]);
-
   const sankeyData = useMemo(() => {
     if (!pathways.length) return undefined;
     return {
@@ -248,15 +226,17 @@ export default function AnalysisDetailPage() {
         setReport(analysisRes.data.report ?? null);
 
         setPathways(
-          (pathwayRes.data ?? []).map((row) => ({
-            id: row.pathway_id,
-            name:
-              (Array.isArray(row.pathways)
-                ? row.pathways[0]?.name
-                : row.pathways?.name) ?? "Pathway",
-            probability: row.probability,
-            loss: row.loss_hotspot,
-          }))
+          (pathwayRes.data ?? []).map((row) => {
+            const pathwayName = Array.isArray(row.pathways)
+              ? row.pathways[0]?.name
+              : (row.pathways as { name?: string } | null)?.name;
+            return {
+              id: row.pathway_id,
+              name: pathwayName ?? "Pathway",
+              probability: row.probability,
+              loss: row.loss_hotspot,
+            };
+          })
         );
 
         setStatus("");
@@ -579,7 +559,7 @@ export default function AnalysisDetailPage() {
             </TabsContent>
 
             <TabsContent value="insights" className="space-y-6">
-              <Accordion type="multiple" className="space-y-4">
+              <Accordion className="space-y-4">
                 <AccordionItem value="insights-key" className="border-none">
                   <AccordionTrigger className="rounded-xl border border-zinc-200 px-4">
                     Key insights & hotspots
