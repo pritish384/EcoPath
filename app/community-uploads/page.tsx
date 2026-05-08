@@ -105,17 +105,17 @@ const minReplyLength = 2;
 function categoryColor(category: ForumCategory) {
   switch (category) {
     case "Question":
-      return "border-blue-200 bg-blue-50 text-blue-700";
+      return "border-teal-200 bg-teal-50 text-teal-800";
     case "Local Tip":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-emerald-200 bg-emerald-50 text-emerald-800";
     case "Facility Review":
-      return "border-cyan-200 bg-cyan-50 text-cyan-700";
+      return "border-cyan-200 bg-cyan-50 text-cyan-800";
     case "Repair & Reuse":
-      return "border-amber-200 bg-amber-50 text-amber-800";
+      return "border-amber-200 bg-amber-50 text-amber-900";
     case "Swap / Donate":
-      return "border-violet-200 bg-violet-50 text-violet-700";
+      return "border-lime-200 bg-lime-50 text-lime-900";
     case "Announcement":
-      return "border-rose-200 bg-rose-50 text-rose-700";
+      return "border-rose-200 bg-rose-50 text-rose-800";
     default:
       return "";
   }
@@ -124,7 +124,7 @@ function categoryColor(category: ForumCategory) {
 function categoryAccentColor(category: ForumCategory) {
   switch (category) {
     case "Question":
-      return "border-l-blue-500";
+      return "border-l-teal-500";
     case "Local Tip":
       return "border-l-emerald-500";
     case "Facility Review":
@@ -132,7 +132,7 @@ function categoryAccentColor(category: ForumCategory) {
     case "Repair & Reuse":
       return "border-l-amber-500";
     case "Swap / Donate":
-      return "border-l-violet-500";
+      return "border-l-lime-500";
     case "Announcement":
       return "border-l-rose-500";
     default:
@@ -155,11 +155,11 @@ function tagColor(tag: string) {
   const normalizedTag = tag.toLowerCase();
 
   if (normalizedTag.includes("hazard") || normalizedTag.includes("swollen")) {
-    return "border-red-200 bg-red-50 text-red-700";
+    return "border-rose-200 bg-rose-50 text-rose-800";
   }
 
   if (normalizedTag.includes("battery") || normalizedTag.includes("power")) {
-    return "border-yellow-200 bg-yellow-50 text-yellow-800";
+    return "border-amber-200 bg-amber-50 text-amber-900";
   }
 
   if (
@@ -167,18 +167,18 @@ function tagColor(tag: string) {
     normalizedTag.includes("reuse") ||
     normalizedTag.includes("appliance")
   ) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
   }
 
   if (normalizedTag.includes("drop") || normalizedTag.includes("collection")) {
-    return "border-blue-200 bg-blue-50 text-blue-700";
+    return "border-teal-200 bg-teal-50 text-teal-800";
   }
 
   if (normalizedTag.includes("e-waste")) {
-    return "border-purple-200 bg-purple-50 text-purple-700";
+    return "border-lime-200 bg-lime-50 text-lime-900";
   }
 
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  return "border-stone-200 bg-stone-50 text-stone-700";
 }
 
 function getInitials(name: string) {
@@ -293,7 +293,7 @@ function TagPill({ tag }: { tag: string }) {
 
 function Avatar({ name }: { name: string }) {
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 text-xs font-semibold text-white">
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-amber-500 text-xs font-semibold text-white">
       {getInitials(name) || "CM"}
     </span>
   );
@@ -310,7 +310,7 @@ function StatPill({
 }) {
   return (
     <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm">
-      <Icon className="size-4 text-emerald-600" />
+      <Icon className="size-4 text-primary" />
       <span className="font-semibold">{value}</span>
       <span className="text-muted-foreground">{label}</span>
     </div>
@@ -617,11 +617,11 @@ export default function CommunityUploadsPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 text-foreground">
-      <header className="border-b border-border bg-background">
+      <header className="border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-6 py-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                 EcoPath Community
               </p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">
@@ -638,7 +638,7 @@ export default function CommunityUploadsPage() {
               </Link>
               <Button
                 type="button"
-                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   setFormError("");
                   setIsCreateDialogOpen(true);

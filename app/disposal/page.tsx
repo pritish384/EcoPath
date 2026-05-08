@@ -70,15 +70,15 @@ type BreakdownResponse = {
 };
 
 const categoryColor: Record<DisposalCategory, string> = {
-  Recyclable: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  "Specialized Recycling": "bg-sky-100 text-sky-800 border-sky-200",
-  "Hazardous Waste": "bg-rose-100 text-rose-800 border-rose-200",
-  Reusable: "bg-violet-100 text-violet-800 border-violet-200",
-  Landfill: "bg-zinc-200 text-zinc-800 border-zinc-300",
-  "E-waste Recovery": "bg-amber-100 text-amber-800 border-amber-200",
+  Recyclable: "bg-emerald-100 text-emerald-900 border-emerald-200",
+  "Specialized Recycling": "bg-teal-100 text-teal-900 border-teal-200",
+  "Hazardous Waste": "bg-rose-100 text-rose-900 border-rose-200",
+  Reusable: "bg-amber-100 text-amber-900 border-amber-200",
+  Landfill: "bg-stone-200 text-stone-800 border-stone-300",
+  "E-waste Recovery": "bg-lime-100 text-lime-900 border-lime-200",
 };
 
-const piePalette = ["#10b981", "#0ea5e9", "#f43f5e", "#8b5cf6", "#71717a", "#f59e0b"];
+const piePalette = ["#2f7f6b", "#0f766e", "#e11d48", "#d97706", "#78716c", "#84cc16"];
 
 const compareSamples = ["Smartphone", "Laptop", "Plastic water bottle", "Headphones"];
 
@@ -193,10 +193,10 @@ export default function DisposalGeneratorPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-background">
+      <header className="border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
               EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -262,7 +262,7 @@ export default function DisposalGeneratorPage() {
               </Button>
 
               {error ? (
-                <div className="flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   <AlertTriangle className="size-4" /> {error}
                 </div>
               ) : null}
@@ -291,9 +291,9 @@ export default function DisposalGeneratorPage() {
                     <p className="text-xl font-semibold">{result.productName}</p>
                     <p className="text-xs text-muted-foreground">Region: {result.region}</p>
                   </div>
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                    <p className="text-sm text-emerald-700">Overall circularity score</p>
-                    <p className="text-3xl font-bold text-emerald-800">
+                  <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+                    <p className="text-sm text-primary/80">Overall circularity score</p>
+                    <p className="text-3xl font-bold text-primary">
                       {result.overallCircularityScore}/100
                     </p>
                   </div>

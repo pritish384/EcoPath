@@ -35,10 +35,10 @@ type CategorizationResult = {
 };
 
 const badgeStyles: Record<Category, string> = {
-  Recyclable: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  Hazardous: "bg-rose-100 text-rose-800 border-rose-200",
-  Compostable: "bg-lime-100 text-lime-800 border-lime-200",
-  Mixed: "bg-zinc-200 text-zinc-800 border-zinc-300",
+  Recyclable: "bg-emerald-100 text-emerald-900 border-emerald-200",
+  Hazardous: "bg-rose-100 text-rose-900 border-rose-200",
+  Compostable: "bg-lime-100 text-lime-900 border-lime-200",
+  Mixed: "bg-stone-200 text-stone-800 border-stone-300",
 };
 
 export default function AiCategorizationPage() {
@@ -106,10 +106,10 @@ export default function AiCategorizationPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-background">
+      <header className="border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">EcoPath</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">EcoPath</p>
             <h1 className="text-2xl font-semibold tracking-tight">AI-Powered Categorization</h1>
             <p className="text-sm text-muted-foreground">Automatic waste classification from image or text.</p>
           </div>
@@ -207,7 +207,7 @@ export default function AiCategorizationPage() {
             </Button>
 
             {error ? (
-              <div className="flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 <AlertTriangle className="size-4" />
                 {error}
               </div>

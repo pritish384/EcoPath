@@ -45,7 +45,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FeatureIconStack, HeroIllustration } from "@/components/eco-illustrations";
+import { FeatureIconStack } from "@/components/eco-illustrations";
 
 type AnalysisPathway = {
   name: string;
@@ -60,7 +60,7 @@ const featureCards = [
     body: "Recycle, reuse, donate, sell, compost, or hazardous disposal pathways as a guided flow.",
     href: "/disposal",
     icon: Recycle,
-    gradient: "from-emerald-500/10 to-teal-500/5",
+    gradient: "from-emerald-500/15 to-teal-400/10",
   },
   {
     title: "Location-Based Suggestions",
@@ -68,14 +68,14 @@ const featureCards = [
     body: "Recycling centers, e-waste facilities, scrap dealers, donation centers, and compost units with maps, hours, and directions.",
     href: "/locations",
     icon: MapPinned,
-    gradient: "from-cyan-500/10 to-sky-500/5",
+    gradient: "from-teal-500/15 to-cyan-400/10",
   },
   {
     title: "Eco Score",
     description: "Instant sustainability rating.",
     body: "Recyclability score, environmental impact level, and toxicity rating for quick decisions.",
     icon: Sparkles,
-    gradient: "from-violet-500/10 to-fuchsia-500/5",
+    gradient: "from-amber-500/20 to-lime-400/10",
   },
   {
     title: "Quick Actions",
@@ -83,7 +83,7 @@ const featureCards = [
     body: "Recycle, reuse, donate, sell, compost, or hazardous disposal — each generates a full action pathway.",
     href: "/quick-actions",
     icon: Zap,
-    gradient: "from-amber-500/10 to-orange-500/5",
+    gradient: "from-amber-500/20 to-orange-400/10",
   },
   {
     title: "AI Chat Assistant",
@@ -91,7 +91,7 @@ const featureCards = [
     body: "Ask questions like “Can I recycle pizza boxes?” and get personalized answers.",
     href: "/ai-chat",
     icon: Bot,
-    gradient: "from-blue-500/10 to-indigo-500/5",
+    gradient: "from-stone-500/15 to-emerald-400/10",
   },
   {
     title: "Reuse Suggestions",
@@ -99,7 +99,7 @@ const featureCards = [
     body: "DIY reuse ideas, upcycling suggestions, donation options, and resale platforms.",
     href: "/reuse-suggestions",
     icon: Wrench,
-    gradient: "from-lime-500/10 to-emerald-500/5",
+    gradient: "from-lime-500/15 to-emerald-400/10",
   },
   {
     title: "Community Forum",
@@ -107,7 +107,7 @@ const featureCards = [
     body: "Ask disposal questions, share collection updates, review facilities, and coordinate reuse with neighbors.",
     href: "/community-uploads",
     icon: MessageSquare,
-    gradient: "from-rose-500/10 to-pink-500/5",
+    gradient: "from-rose-500/10 to-amber-400/10",
   },
   {
     title: "Multi-Material Breakdown",
@@ -115,7 +115,7 @@ const featureCards = [
     body: "Breaks items into components and assigns disposal categories per part.",
     href: "/disposal",
     icon: Brain,
-    gradient: "from-teal-500/10 to-cyan-500/5",
+    gradient: "from-teal-500/15 to-lime-400/10",
   },
   {
     title: "AI-Powered Categorization",
@@ -123,7 +123,7 @@ const featureCards = [
     body: "Labels items as recyclable, hazardous, compostable, or mixed from image/text input.",
     href: "/ai-categorization",
     icon: Sparkles,
-    gradient: "from-slate-500/10 to-zinc-500/5",
+    gradient: "from-stone-500/15 to-emerald-300/10",
   },
 ];
 
@@ -154,6 +154,7 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -400,11 +401,11 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,rgba(16,185,129,0.08),transparent_35%),radial-gradient(circle_at_90%_15%,rgba(14,165,233,0.08),transparent_35%),var(--background)] text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(16,185,129,0.12),transparent_38%),radial-gradient(circle_at_90%_12%,rgba(245,158,11,0.12),transparent_38%),var(--background)] text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               EcoPath
             </p>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -416,14 +417,14 @@ export default function Home() {
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10">
-        <section className="relative overflow-hidden rounded-3xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-6 shadow-sm sm:p-8">
+        <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-emerald-50/60 via-white to-amber-50/60 p-6 shadow-[0_18px_40px_-28px_rgba(10,45,33,0.35)] sm:p-8">
           <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-5">
               <FeatureIconStack />
-              <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                 Turn product waste into clear circular pathways
               </h2>
-              <p className="max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-base">
+              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Upload an image or enter product details to predict regional post-use outcomes,
                 identify loss hotspots, and act on practical disposal options.
               </p>
@@ -452,14 +453,23 @@ export default function Home() {
                   ["Global", "Region-aware logic"],
                   ["AI + Manual", "Flexible input modes"],
                 ].map(([value, label]) => (
-                  <div key={label} className="rounded-xl border border-emerald-100 bg-white/70 p-3">
-                    <p className="text-lg font-semibold text-zinc-900">{value}</p>
-                    <p className="text-xs text-zinc-600">{label}</p>
+                  <div key={label} className="rounded-xl border border-border/60 bg-card/80 p-3">
+                    <p className="text-lg font-semibold text-foreground">{value}</p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <HeroIllustration />
+            <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-slate-950/80 p-2 shadow-[0_18px_40px_-28px_rgba(10,45,33,0.35)]">
+              <Image
+                src="/illustration.png"
+                alt="Circular pathway dashboard illustration"
+                width={1200}
+                height={800}
+                className="h-auto w-full rounded-2xl"
+                priority
+              />
+            </div>
           </div>
         </section>
 
@@ -509,14 +519,14 @@ export default function Home() {
                 <>
                   <div className="flex items-center justify-between">
                     <Button type="button" variant="ghost" onClick={() => setModalStep("mode")}>Back</Button>
-                    <span className="text-xs uppercase tracking-[0.2em] text-zinc-400">Step 2 of 2</span>
+                    <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground/70">Step 2 of 2</span>
                   </div>
 
                   {mode === "manual" ? (
                     <>
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="grid gap-2">
-                          <Label className="text-sm text-zinc-700" htmlFor="product-type">Product type</Label>
+                          <Label className="text-muted-foreground" htmlFor="product-type">Product type</Label>
                           <Input
                             id="product-type"
                             placeholder="Smartphone, PET bottle, EV battery"
@@ -525,7 +535,7 @@ export default function Home() {
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label className="text-sm text-zinc-700">Region</Label>
+                          <Label className="text-muted-foreground">Region</Label>
                           <Select value={region} onValueChange={(value) => setRegion(value ?? "") }>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a region" />
@@ -541,10 +551,10 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="grid gap-2">
-                        <Label className="text-sm text-zinc-700" htmlFor="description">Product description</Label>
+                        <Label className="text-muted-foreground" htmlFor="description">Product description</Label>
                         <textarea
                           id="description"
-                          className="min-h-[120px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          className="min-h-[120px] rounded-xl border border-border/70 bg-card/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/20"
                           placeholder="Materials, typical use, disposal behavior, etc."
                           value={description}
                           onChange={(event) => setDescription(event.target.value)}
@@ -555,7 +565,7 @@ export default function Home() {
                     <>
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="grid gap-2">
-                          <Label className="text-sm text-zinc-700">Region</Label>
+                          <Label className="text-muted-foreground">Region</Label>
                           <Select value={region} onValueChange={(value) => setRegion(value ?? "") }>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a region" />
@@ -571,26 +581,26 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="grid gap-3">
-                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 p-6 transition hover:border-primary/40">
-                          <Label className="flex cursor-pointer flex-col items-center gap-3 text-sm text-zinc-600">
+                        <div className="rounded-2xl border border-dashed border-border/70 bg-muted/50 p-6 transition hover:border-primary/40">
+                          <Label className="flex cursor-pointer flex-col items-center gap-3 text-sm text-muted-foreground">
                             <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                               <UploadCloud className="size-5" />
                             </div>
                             <div className="text-center">
-                              <p className="font-medium text-zinc-900">Drop a product photo or click to upload</p>
-                              <p className="text-xs text-zinc-500">PNG/JPG up to 10MB</p>
+                              <p className="font-medium text-foreground">Drop a product photo or click to upload</p>
+                              <p className="text-xs text-muted-foreground">PNG/JPG up to 10MB</p>
                             </div>
                             <Input id="product-image" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                           </Label>
                         </div>
                         {imagePreview ? (
-                          <div className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-3">
-                            <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-zinc-200">
+                          <div className="flex items-center gap-4 rounded-xl border border-border/70 bg-card/80 p-3">
+                            <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-border/70">
                               <Image src={imagePreview} alt="Product preview" fill unoptimized className="object-cover" />
                             </div>
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-zinc-900">Image uploaded</p>
-                              <p className="text-xs text-zinc-500">Ready for AI analysis</p>
+                              <p className="text-sm font-medium text-foreground">Image uploaded</p>
+                              <p className="text-xs text-muted-foreground">Ready for AI analysis</p>
                             </div>
                             <Button
                               variant="ghost"
@@ -609,10 +619,10 @@ export default function Home() {
                   )}
 
                   <div className="grid gap-2">
-                    <Label className="text-sm text-zinc-700" htmlFor="notes">Notes (optional)</Label>
+                    <Label className="text-muted-foreground" htmlFor="notes">Notes (optional)</Label>
                     <textarea
                       id="notes"
-                      className="min-h-[120px] rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="min-h-[120px] rounded-xl border border-border/70 bg-card/80 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/20"
                       placeholder="Extra context, intended market, disposal behavior"
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
@@ -635,7 +645,7 @@ export default function Home() {
                     </Button>
                   </div>
 
-                  {status ? <p className="text-sm text-zinc-500">{status}</p> : null}
+                  {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
                 </>
               )}
             </div>
@@ -653,7 +663,7 @@ export default function Home() {
             {featureCards.map((feature) => {
               const Icon = feature.icon;
               const content = (
-                <Card className="group h-full border-zinc-200/80 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+                <Card className="group h-full border-border/60 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
                   <CardHeader className="flex flex-row items-start gap-3">
                     <div className={`rounded-xl border border-border bg-gradient-to-br p-2 text-primary ${feature.gradient}`}>
                       <Icon className="size-5" />
@@ -698,7 +708,7 @@ export default function Home() {
           {savedAnalyses.length ? (
             <div className="grid gap-4 md:grid-cols-3">
               {savedAnalyses.map((analysis) => (
-                <Card key={analysis.id} className="border-zinc-200/80">
+                <Card key={analysis.id} className="border-border/60">
                   <CardHeader>
                     <CardTitle className="text-base">{analysis.title}</CardTitle>
                     <CardDescription>Updated {analysis.updated}</CardDescription>
@@ -714,7 +724,7 @@ export default function Home() {
             </div>
           ) : (
             <Card>
-              <CardContent className="py-8 text-sm text-zinc-600">
+              <CardContent className="py-8 text-sm text-muted-foreground">
                 Sign in to save analyses and view recent work.
               </CardContent>
             </Card>

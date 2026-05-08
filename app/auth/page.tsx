@@ -41,7 +41,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 px-6 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-amber-50 px-6 py-12">
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-5xl items-center justify-center">
         <Card className="w-full overflow-hidden shadow-xl p-0">
           <div className="grid items-stretch md:grid-cols-[1.05fr_0.95fr]">
@@ -61,7 +61,7 @@ export default function AuthPage() {
               </div>
               <div className="space-y-3">
                 <CardTitle className="text-3xl">Get Started with EcoPath</CardTitle>
-                <CardDescription className="text-base text-zinc-600">
+                <CardDescription className="text-base text-muted-foreground">
                   Sign in to build lifecycle pathway models and save reports.
                 </CardDescription>
               </div>
@@ -102,34 +102,34 @@ export default function AuthPage() {
                   Secure Google OAuth
                 </Badge>
                 {message ? (
-                  <p className="text-sm text-zinc-600">{message}</p>
+                  <p className="text-sm text-muted-foreground">{message}</p>
                 ) : null}
               </CardContent>
             </CardHeader>
 
-            <div className="flex h-full flex-col justify-center gap-6 bg-gradient-to-br from-blue-50 via-sky-100 to-indigo-100 p-10">
+            <div className="flex h-full flex-col justify-center gap-6 bg-gradient-to-br from-emerald-50 via-lime-50 to-amber-50 p-10">
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-zinc-900">
+                <h2 className="text-xl font-semibold text-foreground">
                   Track lifecycle performance. <span className="text-primary">Act faster.</span>
                 </h2>
-                <p className="text-sm text-zinc-600">
+                <p className="text-sm text-muted-foreground">
                   Build regional pathway models with clean visuals, scenario
                   insights, and export-ready reports.
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/70 p-4 shadow-sm">
-                <div className="text-xs text-zinc-500">This month</div>
-                <div className="text-2xl font-semibold text-zinc-900">
+              <div className="rounded-2xl bg-card/80 p-4 shadow-sm">
+                <div className="text-xs text-muted-foreground">This month</div>
+                <div className="text-2xl font-semibold text-foreground">
                   72% recovery
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500">
-                  <span className="rounded-full bg-white px-3 py-1">
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-full bg-white/80 px-3 py-1">
                     Formal 38%
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1">
+                  <span className="rounded-full bg-white/80 px-3 py-1">
                     Informal 22%
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1">
+                  <span className="rounded-full bg-white/80 px-3 py-1">
                     Loss 12%
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export default function AuthPage() {
                 ].map((item) => (
                   <div
                     key={item}
-                    className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-zinc-700"
+                    className="flex items-center gap-2 rounded-xl bg-card/80 px-3 py-2 text-sm text-muted-foreground"
                   >
                     <CheckCircle2 className="size-4 text-primary" />
                     <span>{item}</span>

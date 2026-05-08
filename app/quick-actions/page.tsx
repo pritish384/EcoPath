@@ -91,10 +91,10 @@ export default function QuickActionsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-background">
+      <header className="border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
               EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">Quick Actions</h1>

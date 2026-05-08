@@ -61,7 +61,7 @@ const Explanation = ({
 }) => (
   <UiTooltip>
     <TooltipTrigger
-      className="mt-3 inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white p-1 text-zinc-600 shadow-sm transition hover:border-primary/40"
+      className="mt-3 inline-flex items-center justify-center rounded-full border border-border/70 bg-background/80 p-1 text-muted-foreground shadow-sm transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/20"
       aria-label="Explanation"
     >
       <Info className="size-3.5 text-primary" />
@@ -82,7 +82,7 @@ const PathwayBars = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[220px] w-full items-center justify-center rounded-md border border-dashed border-zinc-200 text-sm text-zinc-500">
+      <div className="flex h-[220px] w-full items-center justify-center rounded-md border border-dashed border-border/70 bg-muted/40 text-sm text-muted-foreground">
         Loading chart…
       </div>
     ),
@@ -93,7 +93,7 @@ const PathwaySankey = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[280px] w-full items-center justify-center rounded-md border border-dashed border-zinc-200 text-sm text-zinc-500">
+      <div className="flex h-[280px] w-full items-center justify-center rounded-md border border-dashed border-border/70 bg-muted/40 text-sm text-muted-foreground">
         Loading chart…
       </div>
     ),
@@ -113,6 +113,9 @@ export default function AnalysisDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [report, setReport] = useState<Record<string, any> | null>(null);
   const [activePathway, setActivePathway] = useState(0);
+  const [activeMetric, setActiveMetric] = useState<
+    "eco" | "circularity" | "leakage" | "community" | "impact" | null
+  >(null);
 
   const sortedPathways = useMemo(() => {
     return [...pathways].sort((a, b) => b.probability - a.probability);
@@ -165,6 +168,13 @@ export default function AnalysisDetailPage() {
     typeof report?.eco_score?.toxicity_score === "number"
       ? report.eco_score.toxicity_score
       : null;
+
+  const metricCardClass = (key: string) =>
+    `transition-all duration-300 ${
+      activeMetric === key
+        ? "ring-2 ring-primary/30 bg-primary/5"
+        : "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
+    }`;
 
   const scenarioChartData = useMemo(() => {
     const items = report?.what_if_scenario_engine ?? [];
@@ -271,15 +281,15 @@ export default function AnalysisDetailPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-background">
+      <header className="border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
               EcoPath
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
             {updatedAt ? (
-              <p className="text-sm text-zinc-500">Updated {updatedAt}</p>
+              <p className="text-sm text-muted-foreground">Updated {updatedAt}</p>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
@@ -345,17 +355,17 @@ export default function AnalysisDetailPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
 
         {status ? (
           <Card>
-            <CardContent className="py-8 text-sm text-zinc-600">
+            <CardContent className="py-8 text-sm text-muted-foreground">
               {status}
             </CardContent>
           </Card>
         ) : (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="mb-6 grid w-full grid-cols-3">
+            <TabsList className="mb-6 grid w-full grid-cols-3 rounded-2xl bg-muted/60 p-1 shadow-sm">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="pathways">Pathways</TabsTrigger>
@@ -367,7 +377,10 @@ export default function AnalysisDetailPage() {
                   <CardTitle>Eco score</CardTitle>
                   <CardDescription>Weighted sustainability index.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                <CardContent
+                  onClick={() => setActiveMetric(activeMetric === "eco" ? null : "eco")}
+                  className={`cursor-pointer flex min-h-[260px] flex-col items-center justify-between ${metricCardClass("eco")}`}
+                >
                   <div className="h-[140px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -385,13 +398,13 @@ export default function AnalysisDetailPage() {
                           startAngle={90}
                           endAngle={-270}
                         >
-                          <Cell fill="#8b5cf6" />
+                          <Cell fill="#1d7e5f" />
                           <Cell fill="#e2e8f0" />
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-center text-sm font-medium text-zinc-900">
+                  <p className="text-center text-sm font-medium text-foreground">
                     {ecoOverall ?? "–"}/100
                   </p>
                   <Progress value={ecoOverall ?? 0} className="w-full" />
@@ -419,7 +432,7 @@ export default function AnalysisDetailPage() {
                     Executive overview generated from the model inputs.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-sm text-zinc-700">
+                <CardContent className="text-sm text-muted-foreground">
                   {report?.summary ??
                     "Run an analysis to generate the AI summary report."}
                   <Explanation
@@ -433,7 +446,10 @@ export default function AnalysisDetailPage() {
                   <CardTitle>Circularity score</CardTitle>
                   <CardDescription>0–100 sustainability index.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                <CardContent
+                  onClick={() => setActiveMetric(activeMetric === "circularity" ? null : "circularity")}
+                  className={`cursor-pointer flex min-h-[260px] flex-col items-center justify-between ${metricCardClass("circularity")}`}
+                >
                   <div className="h-[140px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -451,13 +467,13 @@ export default function AnalysisDetailPage() {
                           startAngle={90}
                           endAngle={-270}
                         >
-                          <Cell fill="#2563eb" />
+                          <Cell fill="#0891b2" />
                           <Cell fill="#e2e8f0" />
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-center text-sm font-medium text-zinc-900">
+                  <p className="text-center text-sm font-medium text-foreground">
                     {circularityScore ?? "–"}
                   </p>
                   <Progress value={circularityScore ?? 0} className="w-full" />
@@ -472,7 +488,10 @@ export default function AnalysisDetailPage() {
                   <CardTitle>Waste leakage</CardTitle>
                   <CardDescription>Estimated leakage to landfill.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                <CardContent
+                  onClick={() => setActiveMetric(activeMetric === "leakage" ? null : "leakage")}
+                  className={`cursor-pointer flex min-h-[260px] flex-col items-center justify-between ${metricCardClass("leakage")}`}
+                >
                   <div className="h-[140px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -490,13 +509,13 @@ export default function AnalysisDetailPage() {
                           startAngle={90}
                           endAngle={-270}
                         >
-                          <Cell fill="#f97316" />
+                          <Cell fill="#ea580c" />
                           <Cell fill="#e2e8f0" />
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-center text-sm font-medium text-zinc-900">
+                  <p className="text-center text-sm font-medium text-foreground">
                     {leakagePercent ?? "–"}%
                   </p>
                   <Progress value={leakagePercent ?? 0} className="w-full" />
@@ -514,22 +533,22 @@ export default function AnalysisDetailPage() {
                   <CardTitle>Eco score components</CardTitle>
                   <CardDescription>Underlying metric values.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <div className="flex items-center justify-between">
                       <span>Recyclability</span>
                       <Badge variant="secondary">{ecoRecyclability ?? "–"}/100</Badge>
                     </div>
                     <Progress value={ecoRecyclability ?? 0} className="mt-2" />
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <div className="flex items-center justify-between">
                       <span>Environmental impact</span>
                       <Badge variant="secondary">{ecoImpact ?? "–"}/100</Badge>
                     </div>
                     <Progress value={ecoImpact ?? 0} className="mt-2" />
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <div className="flex items-center justify-between">
                       <span>Toxicity safety</span>
                       <Badge variant="secondary">{ecoToxicity ?? "–"}/100</Badge>
@@ -545,7 +564,10 @@ export default function AnalysisDetailPage() {
                     Local efficiency score and rationale.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex min-h-[260px] flex-col items-center justify-between">
+                <CardContent
+                  onClick={() => setActiveMetric(activeMetric === "community" ? null : "community")}
+                  className={`cursor-pointer flex min-h-[260px] flex-col items-center justify-between ${metricCardClass("community")}`}
+                >
                   <div className="h-[140px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -560,13 +582,13 @@ export default function AnalysisDetailPage() {
                           startAngle={90}
                           endAngle={-270}
                         >
-                          <Cell fill="#16a34a" />
+                          <Cell fill="#15803d" />
                           <Cell fill="#e2e8f0" />
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-center text-sm font-medium text-zinc-900">
+                  <p className="text-center text-sm font-medium text-foreground">
                     {communityScore ?? "–"}/100
                   </p>
                   <Progress value={communityScore ?? 0} className="w-full" />
@@ -594,11 +616,11 @@ export default function AnalysisDetailPage() {
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="value" fill="#0891b2" radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="mt-2 text-sm text-zinc-600">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     Delta: {impactDelta ?? "–"} kg CO₂
                   </p>
                   <Explanation
@@ -609,31 +631,31 @@ export default function AnalysisDetailPage() {
               </Card>
             </section>
 
-            <Card className="bg-white">
+            <Card className="bg-background">
               <CardHeader>
                 <CardTitle>Executive summary</CardTitle>
                 <CardDescription>
                   High-level highlights and coverage for this lifecycle model.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3 text-sm text-zinc-700">
-                <div className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3">
+              <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                <div className="flex items-center justify-between rounded-lg border border-border/40 px-4 py-3">
                   <span>Total modeled outcomes</span>
                   <Badge variant="secondary">{sortedPathways.length}</Badge>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-border/40 px-4 py-3">
                   <span>Probability coverage</span>
                   <Badge variant="secondary">
                     {Math.min(100, Math.round(totalProbability))}%
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-border/40 px-4 py-3">
                   <span>Top pathway</span>
                   <Badge variant="secondary">
                     {sortedPathways[0]?.name ?? "–"}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-border/40 px-4 py-3">
                   <span>Circularity score</span>
                   <Badge variant="secondary">
                     {report?.circularity_score ?? "–"}
@@ -647,7 +669,7 @@ export default function AnalysisDetailPage() {
                 <CardHeader>
                   <CardTitle>Notes</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-zinc-700">
+                <CardContent className="text-sm text-muted-foreground">
                   {notes}
                 </CardContent>
               </Card>
@@ -657,7 +679,7 @@ export default function AnalysisDetailPage() {
             <TabsContent value="insights" className="space-y-6">
               <Accordion className="space-y-4">
                 <AccordionItem value="insights-key" className="border-none">
-                  <AccordionTrigger className="rounded-xl border border-zinc-200 px-4">
+                  <AccordionTrigger className="rounded-xl border border-border/40 px-4">
                     Key insights & hotspots
                   </AccordionTrigger>
                   <AccordionContent className="pt-4">
@@ -669,13 +691,13 @@ export default function AnalysisDetailPage() {
                     Summary observations from the probability mix.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     {sortedPathways[0]
                       ? `The leading pathway is ${sortedPathways[0].name} at ${sortedPathways[0].probability}%.`
                       : "No dominant pathway identified yet."}
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     {sortedPathways.length > 1
                       ? `The top two pathways account for ~${Math.round(
                           (sortedPathways[0]?.probability ?? 0) +
@@ -683,7 +705,7 @@ export default function AnalysisDetailPage() {
                         )}% of outcomes.`
                       : "Add more pathways to compare distribution."}
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     {topLosses.length
                       ? `Key loss hotspots flagged in ${topLosses.length} pathway(s).`
                       : "No loss hotspots flagged yet."}
@@ -703,9 +725,9 @@ export default function AnalysisDetailPage() {
                     topLosses.map((row, index) => (
                       <div
                         key={`${row.id}-loss-${index}`}
-                        className="rounded-lg border border-zinc-200 px-4 py-3 text-sm text-zinc-700"
+                        className="rounded-lg border border-border/40 px-4 py-3 text-sm text-muted-foreground"
                       >
-                        <p className="font-medium text-zinc-900">
+                        <p className="font-medium text-foreground">
                           {row.name}
                         </p>
                         <p className="text-xs text-zinc-500">
@@ -714,7 +736,7 @@ export default function AnalysisDetailPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-zinc-600">
+                    <p className="text-sm text-muted-foreground">
                       No loss hotspots captured.
                     </p>
                   )}
@@ -732,14 +754,14 @@ export default function AnalysisDetailPage() {
                   Prioritized follow-ups to improve recovery.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3 text-sm text-zinc-700">
-                <div className="rounded-lg border border-zinc-200 px-4 py-3">
+              <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                <div className="rounded-lg border border-border/40 px-4 py-3">
                   Validate top pathway assumptions with regional collection data.
                 </div>
-                <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                <div className="rounded-lg border border-border/40 px-4 py-3">
                   Focus interventions on the highest-probability loss hotspot.
                 </div>
-                <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                <div className="rounded-lg border border-border/40 px-4 py-3">
                   Capture informal recovery signals to improve model confidence.
                 </div>
               </CardContent>
@@ -753,22 +775,22 @@ export default function AnalysisDetailPage() {
                     Timeline outlook after disposal.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <div className="grid gap-2 rounded-lg border border-zinc-200 px-4 py-3">
+                <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                  <div className="grid gap-2 rounded-lg border border-border/40 px-4 py-3">
                     <span className="text-xs uppercase text-zinc-400">Day</span>
                     <p>
                       {report?.waste_future_predictor?.day ??
                         "Day-level outlook will appear after AI analysis."}
                     </p>
                   </div>
-                  <div className="grid gap-2 rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="grid gap-2 rounded-lg border border-border/40 px-4 py-3">
                     <span className="text-xs uppercase text-zinc-400">Week</span>
                     <p>
                       {report?.waste_future_predictor?.week ??
                         "Week-level outlook will appear after AI analysis."}
                     </p>
                   </div>
-                  <div className="grid gap-2 rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="grid gap-2 rounded-lg border border-border/40 px-4 py-3">
                     <span className="text-xs uppercase text-zinc-400">Year</span>
                     <p>
                       {report?.waste_future_predictor?.year ??
@@ -785,8 +807,8 @@ export default function AnalysisDetailPage() {
                     How habits shift the outcome.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Observed habits</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {(report?.behavior_based_suggestion?.habits ?? []).map(
@@ -803,7 +825,7 @@ export default function AnalysisDetailPage() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Suggestions</p>
                     <ul className="mt-2 list-disc space-y-1 pl-4">
                       {(report?.behavior_based_suggestion?.suggestions ?? []).map(
@@ -828,7 +850,7 @@ export default function AnalysisDetailPage() {
                     Visual chain from user to final stage.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
+                <CardContent className="grid gap-3 text-sm text-muted-foreground">
                   <div className="flex flex-wrap items-center gap-2">
                     {(report?.waste_flow_map?.steps ?? []).map(
                       (step: string, idx: number, arr: string[]) => (
@@ -861,8 +883,8 @@ export default function AnalysisDetailPage() {
                     CO₂ impact of recycling vs landfill.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 text-sm text-zinc-700">
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                <CardContent className="grid gap-3 text-sm text-muted-foreground">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Recycle</p>
                     <p className="mt-1 text-sm">
                       {(report?.impact_simulator?.recycle?.co2_kg ?? "–")} kg CO₂
@@ -871,7 +893,7 @@ export default function AnalysisDetailPage() {
                       {report?.impact_simulator?.recycle?.notes ?? ""}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Landfill</p>
                     <p className="mt-1 text-sm">
                       {(report?.impact_simulator?.landfill?.co2_kg ?? "–")} kg CO₂
@@ -880,7 +902,7 @@ export default function AnalysisDetailPage() {
                       {report?.impact_simulator?.landfill?.notes ?? ""}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                  <div className="rounded-lg border border-border/40 px-4 py-3">
                     <p className="text-xs uppercase text-zinc-400">Delta</p>
                     <p className="mt-1 text-sm">
                       {(report?.impact_simulator?.delta_kg ?? "–")} kg CO₂ saved
@@ -898,7 +920,7 @@ export default function AnalysisDetailPage() {
                     Informal or unseen pathways.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-2 text-sm text-zinc-700">
+                <CardContent className="grid gap-2 text-sm text-muted-foreground">
                   <ul className="list-disc space-y-1 pl-4">
                     {(report?.hidden_material_flow ?? []).map((item: string) => (
                       <li key={item}>{item}</li>
@@ -955,7 +977,7 @@ export default function AnalysisDetailPage() {
                     Inefficiencies driving landfill leakage.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-2 text-sm text-zinc-700">
+                <CardContent className="grid gap-2 text-sm text-muted-foreground">
                   <p>
                     Leakage: {report?.waste_leakage_detector?.leakage_percent ?? "–"}%
                   </p>
@@ -981,7 +1003,7 @@ export default function AnalysisDetailPage() {
                     How brand/type influences outcomes.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-sm text-zinc-700">
+                <CardContent className="text-sm text-muted-foreground">
                   {report?.product_aware_prediction ??
                     "Product-aware prediction will appear after AI analysis."}
                 </CardContent>
@@ -994,7 +1016,7 @@ export default function AnalysisDetailPage() {
                     Why the model reached these results.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-sm text-zinc-700">
+                <CardContent className="text-sm text-muted-foreground">
                   {report?.explainable_ai_output ??
                     "Explainability notes will appear after AI analysis."}
                 </CardContent>
@@ -1009,7 +1031,7 @@ export default function AnalysisDetailPage() {
                     Resale, repair, and reuse opportunities.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-2 text-sm text-zinc-700">
+                <CardContent className="grid gap-2 text-sm text-muted-foreground">
                   <ul className="list-disc space-y-1 pl-4">
                     {(report?.reverse_supply_chain_suggestion ?? []).map(
                       (item: string) => (
@@ -1047,21 +1069,21 @@ export default function AnalysisDetailPage() {
                                 className={`flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left transition ${
                                   isActive
                                     ? "border-primary/60 bg-primary/5"
-                                    : "border-zinc-200 hover:border-primary/30"
+                                    : "border-border/40 hover:border-primary/30"
                                 }`}
                               >
                                 <span
                                   className={`mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                                     isActive
                                       ? "bg-primary text-white"
-                                      : "bg-zinc-100 text-zinc-600"
+                                      : "bg-zinc-100 text-muted-foreground"
                                   }`}
                                 >
                                   {index + 1}
                                 </span>
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between gap-3">
-                                    <p className="font-medium text-zinc-900">
+                                    <p className="font-medium text-foreground">
                                       {row.name}
                                     </p>
                                     <Badge variant="secondary">
@@ -1080,7 +1102,7 @@ export default function AnalysisDetailPage() {
                         })}
                       </ol>
                     ) : (
-                      <p className="text-sm text-zinc-600">
+                      <p className="text-sm text-muted-foreground">
                         No pathway data saved.
                       </p>
                     )}
@@ -1094,40 +1116,40 @@ export default function AnalysisDetailPage() {
                       Details for the currently highlighted step.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="grid gap-3 text-sm text-zinc-700">
+                  <CardContent className="grid gap-3 text-sm text-muted-foreground">
                     {sortedPathways.length ? (
                       <>
-                        <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                        <div className="rounded-lg border border-border/40 px-4 py-3">
                           <p className="text-xs uppercase text-zinc-400">
                             Pathway
                           </p>
-                          <p className="mt-1 text-base font-semibold text-zinc-900">
+                          <p className="mt-1 text-base font-semibold text-foreground">
                             {sortedPathways[activePathway]?.name}
                           </p>
                         </div>
                         <div className="grid gap-3 md:grid-cols-2">
-                          <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                          <div className="rounded-lg border border-border/40 px-4 py-3">
                             <p className="text-xs uppercase text-zinc-400">
                               Probability
                             </p>
-                            <p className="mt-1 text-sm font-medium text-zinc-900">
+                            <p className="mt-1 text-sm font-medium text-foreground">
                               {sortedPathways[activePathway]?.probability ?? "–"}%
                             </p>
                           </div>
-                          <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                          <div className="rounded-lg border border-border/40 px-4 py-3">
                             <p className="text-xs uppercase text-zinc-400">
                               Loss hotspot
                             </p>
-                            <p className="mt-1 text-sm text-zinc-700">
+                            <p className="mt-1 text-sm text-muted-foreground">
                               {sortedPathways[activePathway]?.loss ?? "None flagged"}
                             </p>
                           </div>
                         </div>
-                        <div className="rounded-lg border border-zinc-200 px-4 py-3">
+                        <div className="rounded-lg border border-border/40 px-4 py-3">
                           <p className="text-xs uppercase text-zinc-400">
                             Notes
                           </p>
-                          <p className="mt-1 text-sm text-zinc-600">
+                          <p className="mt-1 text-sm text-muted-foreground">
                             Use this step to review assumptions for this pathway
                             and confirm if the probability aligns with field
                             observations.
@@ -1135,7 +1157,7 @@ export default function AnalysisDetailPage() {
                         </div>
                       </>
                     ) : (
-                      <p className="text-sm text-zinc-600">
+                      <p className="text-sm text-muted-foreground">
                         Select a pathway to see details.
                       </p>
                     )}
