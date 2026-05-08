@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ecopath
+
+Ecopath is a Next.js application for mapping post-use material pathways by product and region. It combines Supabase-backed reference data, probability estimates, loss hotspots, and saved analyses into a simple dashboard for exploring lifecycle outcomes.
+
+## What it does
+
+- Select a product and region to inspect likely post-use pathways.
+- Visualize pathway splits with a Sankey diagram and probability bars.
+- Save analyses to your Supabase account and revisit them later.
+- Manage reference data and probability inputs from an admin screen.
+- Seeded sample data is included for products, regions, pathways, probabilities, and loss hotspots.
+
+## Tech Stack
+
+- Next.js 16 with the App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Supabase for authentication, database access, and persistence
+- Recharts for chart rendering
+
+## Project Structure
+
+- `app/page.tsx` - main dashboard and analysis builder
+- `app/admin/page.tsx` - admin data entry for products, regions, pathways, probabilities, and hotspots
+- `app/analyses/page.tsx` - saved analyses list
+- `app/analyses/[id]/page.tsx` - analysis detail view
+- `app/auth/page.tsx` - Google sign-in entry point
+- `app/auth/callback/route.ts` - OAuth callback handler
+- `lib/supabase/` - browser and server Supabase clients
+- `components/` - UI and chart components
+- `supabase/schema.sql` - database schema and row-level security policies
+- `supabase/seed.sql` - sample reference data
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create a local environment file named `.env.local` and add your Supabase values:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+3. Apply the schema and optional seed data in Supabase:
+
+```sql
+-- run supabase/schema.sql first
+-- then run supabase/seed.sql if you want sample data
+```
+
+4. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - start the local development server
+- `npm run build` - build the production app
+- `npm run start` - run the production build
+- `npm run lint` - run ESLint
 
-## Learn More
+## Supabase Setup
 
-To learn more about Next.js, take a look at the following resources:
+This app expects two public environment variables in both browser and server code:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The database schema defines these core tables:
 
-## Deploy on Vercel
+- `products`
+- `regions`
+- `pathways`
+- `pathway_probabilities`
+- `loss_hotspots`
+- `analyses`
+- `analysis_pathways`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Row-level security is enabled in `supabase/schema.sql`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Sample Data
+
+`supabase/seed.sql` includes example records for:
+
+- Smartphone in India
+- Plastic bottle in the European Union
+- EV battery in the United States
+
+These seeds make the dashboard usable immediately after the schema is applied.
+
+## Main User Flow
+
+1. Open the dashboard and select a product and region.
+2. Review the pathway probabilities, Sankey flow, and loss hotspots.
+3. Sign in with Google to save an analysis.
+4. Use the admin page to manage reference data and probability inputs.
+5. Open saved analyses from the analyses page or the detail view.
+
+## Deployment
+
+This is a standard Next.js app and can be deployed to Vercel or any platform that supports Node.js builds.
+
+Before deploying, make sure your Supabase project is configured with the schema, seed data if desired, and the environment variables above.
