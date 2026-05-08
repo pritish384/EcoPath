@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { UserMenu } from "@/components/user-menu";
 import {
   Card,
   CardContent,
@@ -84,9 +85,15 @@ export default function AnalysesPage() {
               Saved analyses
             </h1>
           </div>
-          <Link href="/" className={buttonVariants({ variant: "outline" })}>
-            Back to dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Back to dashboard
+            </Link>
+            <UserMenu />
+          </div>
         </div>
       </header>
 

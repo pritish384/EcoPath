@@ -20,10 +20,14 @@ export default function AuthPage() {
     startTransition(async () => {
       try {
         const supabase = createSupabaseBrowserClient();
+        const nextPath =
+          new URLSearchParams(window.location.search).get("next") ?? "/";
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+              nextPath
+            )}`,
           },
         });
 

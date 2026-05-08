@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { UserMenu } from "@/components/user-menu";
 import {
   Card,
   CardContent,
@@ -13,6 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -45,79 +48,41 @@ const PathwaySankey = dynamic(
   }
 );
 
-type Product = { id: string; name: string };
-type Region = { id: string; name: string };
-type Pathway = { id: string; name: string };
-type PathwayProbability = {
-  id: string;
-  product_id: string;
-  region_id: string;
-  pathway_id: string;
+type AnalysisPathway = {
+  name: string;
   probability: number;
-  confidence: number | null;
-};
-type LossHotspot = {
-  pathway_probability_id: string;
-  label: string;
+  loss: string;
 };
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [pathways, setPathways] = useState<Pathway[]>([]);
-  const [probabilities, setProbabilities] = useState<PathwayProbability[]>([]);
-  const [lossHotspots, setLossHotspots] = useState<LossHotspot[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<string>("");
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
+  const [mode, setMode] = useState<"manual" | "ai">("ai");
+  const [productType, setProductType] = useState("");
+  const [region, setRegion] = useState("");
+  const [description, setDescription] = useState("");
+  const [notes, setNotes] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string>("");
+  const [inferredProduct, setInferredProduct] = useState<string>("");
+  const [inferredRegion, setInferredRegion] = useState<string>("");
+  const [currentPathways, setCurrentPathways] = useState<AnalysisPathway[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [savedAnalyses, setSavedAnalyses] = useState<
     { id: string; title: string; updated: string; tag: string }[]
   >([]);
 
+  const regions = [
+    "India",
+    "European Union",
+    "United States",
+    "SE Asia",
+    "Africa",
+  ];
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const supabase = createSupabaseBrowserClient();
-        const [productsRes, regionsRes, pathwaysRes, probsRes, lossRes] =
-          await Promise.all([
-            supabase.from("products").select("id,name").order("name"),
-            supabase.from("regions").select("id,name").order("name"),
-            supabase.from("pathways").select("id,name").order("name"),
-            supabase
-              .from("pathway_probabilities")
-              .select("id,product_id,region_id,pathway_id,probability,confidence"),
-            supabase
-              .from("loss_hotspots")
-              .select("pathway_probability_id,label"),
-          ]);
-
-        if (productsRes.error) throw productsRes.error;
-        if (regionsRes.error) throw regionsRes.error;
-        if (pathwaysRes.error) throw pathwaysRes.error;
-        if (probsRes.error) throw probsRes.error;
-        if (lossRes.error) throw lossRes.error;
-
-        setProducts(productsRes.data ?? []);
-        setRegions(regionsRes.data ?? []);
-        setPathways(pathwaysRes.data ?? []);
-        setProbabilities(probsRes.data ?? []);
-        setLossHotspots(lossRes.data ?? []);
-
-        if (productsRes.data?.length) {
-          setSelectedProduct((prev) => prev || productsRes.data[0].id);
-        }
-        if (regionsRes.data?.length) {
-          setSelectedRegion((prev) => prev || regionsRes.data[0].id);
-        }
-      } catch (error) {
-        setStatus(
-          "Add Supabase env vars and seed data to see results in the UI."
-        );
-      }
-    };
-
-    load();
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -135,8 +100,17 @@ export default function Home() {
 
         if (error) throw error;
 
-        const productMap = new Map(products.map((p) => [p.id, p.name]));
-        const regionMap = new Map(regions.map((r) => [r.id, r.name]));
+        const [productRes, regionRes] = await Promise.all([
+          supabase.from("products").select("id,name"),
+          supabase.from("regions").select("id,name"),
+        ]);
+
+        const productMap = new Map(
+          (productRes.data ?? []).map((p) => [p.id, p.name])
+        );
+        const regionMap = new Map(
+          (regionRes.data ?? []).map((r) => [r.id, r.name])
+        );
 
         setSavedAnalyses(
           (data ?? []).map((row) => ({
@@ -153,40 +127,8 @@ export default function Home() {
       }
     };
 
-    if (products.length && regions.length) {
-      loadAnalyses();
-    }
-  }, [products, regions]);
-
-  const lossMap = useMemo(() => {
-    return new Map(
-      lossHotspots.map((loss) => [loss.pathway_probability_id, loss.label])
-    );
-  }, [lossHotspots]);
-
-  const currentPathways = useMemo(() => {
-    if (!selectedProduct || !selectedRegion) return [];
-    const pathwayMap = new Map(pathways.map((pathway) => [pathway.id, pathway]));
-
-    return probabilities
-      .filter(
-        (row) =>
-          row.product_id === selectedProduct &&
-          row.region_id === selectedRegion
-      )
-      .map((row) => {
-        const pathway = pathwayMap.get(row.pathway_id);
-        return {
-          id: row.id,
-          pathwayId: row.pathway_id,
-          name: pathway?.name ?? "Pathway",
-          probability: Number(row.probability),
-          confidence: row.confidence,
-          loss: lossMap.get(row.id) ?? "Not captured",
-        };
-      })
-      .sort((a, b) => b.probability - a.probability);
-  }, [lossMap, pathways, probabilities, selectedProduct, selectedRegion]);
+    loadAnalyses();
+  }, []);
 
   const barData = useMemo(() => {
     return currentPathways.map((pathway) => ({
@@ -197,11 +139,8 @@ export default function Home() {
 
   const sankeyData = useMemo(() => {
     if (!currentPathways.length) return undefined;
-    const productName =
-      products.find((product) => product.id === selectedProduct)?.name ??
-      "Product";
     const nodes = [
-      { name: productName },
+      { name: productType || "Product" },
       ...currentPathways.map((pathway) => ({ name: pathway.name })),
     ];
     const links = currentPathways.map((pathway, index) => ({
@@ -210,13 +149,59 @@ export default function Home() {
       value: pathway.probability,
     }));
     return { nodes, links };
-  }, [currentPathways, products, selectedProduct]);
+  }, [currentPathways, productType]);
 
-  const selectedProductName =
-    products.find((product) => product.id === selectedProduct)?.name ??
-    "Product";
-  const selectedRegionName =
-    regions.find((region) => region.id === selectedRegion)?.name ?? "Region";
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setImagePreview(result);
+      setImageDataUrl(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAnalyze = async () => {
+    setStatus("");
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          productType: productType || undefined,
+          region: region || undefined,
+          description: description || undefined,
+          notes,
+          imageDataUrl: imageDataUrl || undefined,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        const detail = data?.detail ? JSON.stringify(data.detail) : "";
+        throw new Error(data.error || detail || "Analysis failed");
+      }
+
+      setSummary(data.summary ?? "");
+      setInferredProduct(data.product ?? "");
+      setInferredRegion(data.region ?? "");
+      setCurrentPathways(data.pathways ?? []);
+      setStatus("Analysis ready.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to run analysis. Check AI credentials.";
+      setStatus(message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSaveAnalysis = async () => {
     setStatus("");
@@ -228,12 +213,55 @@ export default function Home() {
         return;
       }
 
+      const productName = productType.trim();
+      const regionName = region.trim();
+
+      if (!productName || !regionName) {
+        setStatus("Add product type and region before saving.");
+        return;
+      }
+
+      const { data: productRow } = await supabase
+        .from("products")
+        .select("id")
+        .eq("name", productName)
+        .maybeSingle();
+      const { data: regionRow } = await supabase
+        .from("regions")
+        .select("id")
+        .eq("name", regionName)
+        .maybeSingle();
+
+      const productId =
+        productRow?.id ??
+        (
+          await supabase
+            .from("products")
+            .insert({ name: productName })
+            .select("id")
+            .single()
+        ).data?.id;
+      const regionId =
+        regionRow?.id ??
+        (
+          await supabase
+            .from("regions")
+            .insert({ name: regionName, code: regionName.slice(0, 3).toUpperCase() })
+            .select("id")
+            .single()
+        ).data?.id;
+
+      if (!productId || !regionId) {
+        setStatus("Unable to save analysis metadata.");
+        return;
+      }
+
       const { data: analysis, error } = await supabase
         .from("analyses")
         .insert({
           user_id: userData.user.id,
-          product_id: selectedProduct,
-          region_id: selectedRegion,
+          product_id: productId,
+          region_id: regionId,
           notes,
         })
         .select("id")
@@ -242,14 +270,32 @@ export default function Home() {
       if (error) throw error;
 
       if (analysis?.id && currentPathways.length) {
-        const entries = currentPathways.map((pathway) => ({
-          analysis_id: analysis.id,
-          pathway_id: pathway.pathwayId,
-          probability: pathway.probability,
-          loss_hotspot: pathway.loss,
-        }));
+        const pathwayEntries = await Promise.all(
+          currentPathways.map(async (pathway) => {
+            const { data: existing } = await supabase
+              .from("pathways")
+              .select("id")
+              .eq("name", pathway.name)
+              .maybeSingle();
+            const pathwayId =
+              existing?.id ??
+              (
+                await supabase
+                  .from("pathways")
+                  .insert({ name: pathway.name })
+                  .select("id")
+                  .single()
+              ).data?.id;
+            return {
+              analysis_id: analysis.id,
+              pathway_id: pathwayId,
+              probability: pathway.probability,
+              loss_hotspot: pathway.loss,
+            };
+          })
+        );
 
-        await supabase.from("analysis_pathways").insert(entries);
+        await supabase.from("analysis_pathways").insert(pathwayEntries);
       }
 
       setStatus("Analysis saved.");
@@ -257,6 +303,10 @@ export default function Home() {
       setStatus("Unable to save analysis.");
     }
   };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
@@ -270,12 +320,7 @@ export default function Home() {
               Lifecycle Pathway Reconstructor
             </h1>
           </div>
-          <Link
-            href="/auth"
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Sign in
-          </Link>
+          <UserMenu />
         </div>
       </header>
 
@@ -285,45 +330,32 @@ export default function Home() {
             <CardHeader>
               <CardTitle>Map post-use outcomes</CardTitle>
               <CardDescription>
-                Enter a product type and region to estimate where materials go
-                next.
+                Upload a product image and specify the region for AI analysis.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <p className="text-sm font-medium text-zinc-700">
+                  <Label className="text-sm text-zinc-700" htmlFor="product-type">
                     Product type
-                  </p>
-                  <Select
-                    value={selectedProduct}
-                    onValueChange={setSelectedProduct}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  </Label>
+                  <Input
+                    id="product-type"
+                    placeholder="Smartphone, PET bottle, EV battery"
+                    value={productType}
+                    onChange={(event) => setProductType(event.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <p className="text-sm font-medium text-zinc-700">Region</p>
-                  <Select
-                    value={selectedRegion}
-                    onValueChange={setSelectedRegion}
-                  >
+                  <Label className="text-sm text-zinc-700">Region</Label>
+                  <Select value={region} onValueChange={setRegion}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a region" />
                     </SelectTrigger>
                     <SelectContent>
-                      {regions.map((region) => (
-                        <SelectItem key={region.id} value={region.id}>
-                          {region.name}
+                      {regions.map((regionName) => (
+                        <SelectItem key={regionName} value={regionName}>
+                          {regionName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -331,19 +363,52 @@ export default function Home() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <p className="text-sm font-medium text-zinc-700">
+                <Label className="text-sm text-zinc-700" htmlFor="product-image">
+                  Product image (optional)
+                </Label>
+                <Input
+                  id="product-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Product preview"
+                    className="h-32 w-32 rounded-md border border-zinc-200 object-cover"
+                  />
+                ) : null}
+              </div>
+              <div className="grid gap-2">
+                <Label className="text-sm text-zinc-700" htmlFor="notes">
                   Notes (optional)
-                </p>
+                </Label>
                 <textarea
+                  id="notes"
                   className="min-h-[96px] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
                   placeholder="E.g., mid-tier Android handset, 2021 release"
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                 />
               </div>
-              <Button className="w-full" onClick={handleSaveAnalysis}>
-                Save analysis
-              </Button>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Button
+                  className="w-full"
+                  onClick={handleAnalyze}
+                  disabled={!productType || !region || isAnalyzing}
+                >
+                  {isAnalyzing ? "Analyzing…" : "Analyze pathways"}
+                </Button>
+                <Button
+                  className="w-full"
+                  onClick={handleSaveAnalysis}
+                  variant="secondary"
+                  disabled={!currentPathways.length}
+                >
+                  Save analysis
+                </Button>
+              </div>
               {status ? <p className="text-sm text-zinc-500">{status}</p> : null}
             </CardContent>
           </Card>
@@ -387,22 +452,26 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Results</h2>
             <Badge variant="secondary">
-              {selectedProductName} · {selectedRegionName}
+              {productType || "Product"} · {region || "Region"}
             </Badge>
           </div>
+          {summary ? (
+            <Card>
+              <CardContent className="py-4 text-sm text-zinc-600">
+                {summary}
+              </CardContent>
+            </Card>
+          ) : null}
           {currentPathways.length ? (
             <div className="grid gap-4 md:grid-cols-2">
               {currentPathways.map((pathway) => (
-                <Card key={pathway.id}>
+                <Card key={pathway.name}>
                   <CardHeader>
                     <CardTitle className="text-base">
                       {pathway.name}
                     </CardTitle>
                     <CardDescription>
                       Estimated probability: {pathway.probability}%
-                      {pathway.confidence
-                        ? ` · Confidence ${pathway.confidence}%`
-                        : ""}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex items-center justify-between">
@@ -415,7 +484,7 @@ export default function Home() {
           ) : (
             <Card>
               <CardContent className="py-8 text-sm text-zinc-600">
-                No pathway data found. Seed the Supabase tables to see results.
+                Run an AI analysis to see pathway results.
               </CardContent>
             </Card>
           )}
