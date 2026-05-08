@@ -382,15 +382,24 @@ export default function LocationsPage() {
             <div className="grid gap-3 md:grid-cols-2">
               {results.map((result) => {
                 const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${result.lat},${result.lon}`;
+                const Icon = categoryIcons[category];
                 return (
                   <Card key={result.id} className="transition-transform hover:-translate-y-0.5">
-                    <CardHeader>
-                      <CardTitle className="text-base">{result.name}</CardTitle>
-                      <CardDescription>{result.category}</CardDescription>
+                    <CardHeader className="flex flex-row items-start gap-3">
+                      <div className="rounded-lg border border-border bg-background p-2 text-primary">
+                        <Icon className="size-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{result.name}</CardTitle>
+                        <CardDescription>{result.category}</CardDescription>
+                      </div>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground space-y-2">
+                    <CardContent className="space-y-2 text-sm text-muted-foreground">
                       {result.address ? <p>{result.address}</p> : null}
                       {result.hours ? <p>Hours: {result.hours}</p> : null}
+                      {result.distanceKm ? (
+                        <p>Distance: {result.distanceKm.toFixed(1)} km</p>
+                      ) : null}
                       <Link
                         href={mapsUrl}
                         target="_blank"
