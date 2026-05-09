@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle, ImageIcon, Loader2, Sparkles, Type } from "lucide-react";
@@ -186,10 +187,13 @@ export default function AiCategorizationPage() {
                   onChange={onFileChange}
                 />
                 {imagePreview ? (
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Uploaded preview"
-                    className="mt-2 max-h-52 rounded-lg border border-border object-contain"
+                    width={320}
+                    height={208}
+                    unoptimized
+                    className="mt-2 max-h-52 w-auto rounded-lg border border-border object-contain"
                   />
                 ) : null}
               </div>

@@ -10,13 +10,6 @@ import {
   YAxis,
 } from "recharts";
 
-const defaultData = [
-  { name: "Formal", value: 38 },
-  { name: "Informal", value: 22 },
-  { name: "Resale", value: 18 },
-  { name: "Landfill", value: 22 },
-];
-
 function BarTooltip({ active, payload }: TooltipProps<number, string>) {
   if (!active || !payload?.length) return null;
   return (
@@ -27,7 +20,9 @@ function BarTooltip({ active, payload }: TooltipProps<number, string>) {
   );
 }
 
-export function PathwayBars({ data }: { data?: typeof defaultData }) {
+type BarDatum = { name: string; value: number };
+
+export function PathwayBars({ data }: { data?: BarDatum[] }) {
   if (!data || !data.length) {
     return (
       <div className="flex h-[220px] w-full items-center justify-center rounded-md border border-dashed border-zinc-200 text-sm text-zinc-500">

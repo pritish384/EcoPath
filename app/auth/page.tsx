@@ -34,7 +34,7 @@ export default function AuthPage() {
         });
 
         if (error) throw error;
-      } catch (err) {
+      } catch {
         setMessage("Unable to sign in with Google. Please try again.");
       }
     });

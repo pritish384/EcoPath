@@ -99,7 +99,14 @@ function toOverpassQuery(
   return `[out:json][timeout:25];(${tagFilter});out center tags;`;
 }
 
-function mapOverpassToResults(items: any[], category: string): LocationResult[] {
+type OverpassElement = {
+  id: number | string;
+  lat?: number;
+  lon?: number;
+  tags?: Record<string, string>;
+};
+
+function mapOverpassToResults(items: OverpassElement[], category: string): LocationResult[] {
   return items
     .filter((item) => item.lat && item.lon)
     .map((item) => ({
@@ -249,7 +256,7 @@ export default function LocationsPage() {
 
       setResults(mapped);
       setStatus(mapped.length ? `Found ${mapped.length} locations.` : "No locations found.");
-    } catch (error) {
+    } catch {
       setStatus("Unable to fetch locations. Try again in a moment.");
     }
   };

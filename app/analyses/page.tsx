@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { UserMenu } from "@/components/user-menu";
 import {
   AlertDialog,
@@ -35,7 +35,6 @@ type AnalysisRow = {
 export default function AnalysesPage() {
   const [analyses, setAnalyses] = useState<AnalysisRow[]>([]);
   const [status, setStatus] = useState<string>("");
-  const [deleteTarget, setDeleteTarget] = useState<AnalysisRow | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -77,7 +76,7 @@ export default function AnalysesPage() {
             tag: "Saved",
           }))
         );
-      } catch (error) {
+      } catch {
         setStatus("Unable to load analyses.");
       }
     };
@@ -103,8 +102,7 @@ export default function AnalysesPage() {
       if (error) throw error;
 
       setAnalyses((prev) => prev.filter((row) => row.id !== analysisId));
-      setDeleteTarget(null);
-    } catch (error) {
+    } catch {
       setStatus("Unable to delete analysis.");
     }
   };
@@ -166,7 +164,6 @@ export default function AnalysesPage() {
                     <AlertDialog>
                       <AlertDialogTrigger
                         className={buttonVariants({ variant: "destructive", size: "sm" })}
-                        onClick={() => setDeleteTarget(analysis)}
                       >
                         Delete
                       </AlertDialogTrigger>

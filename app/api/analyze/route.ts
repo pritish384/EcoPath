@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+type OpenAIContentItem = { text?: string; output_text?: string; text?: { value?: string } };
+type OpenAIOutputItem = { content?: OpenAIContentItem[] };
+type OpenAIResponse = { output_text?: string; output?: OpenAIOutputItem[] };
+
 type AnalyzeRequest = {
   mode: "manual" | "ai";
   productType?: string;
@@ -68,7 +72,7 @@ export async function POST(request: Request) {
     });
 
     const rawText = await response.text();
-    let data: any = null;
+    let data: OpenAIResponse | null = null;
     try {
       data = JSON.parse(rawText);
     } catch {
@@ -89,11 +93,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const extractOutputText = (payload: any) => {
+    const extractOutputText = (payload: OpenAIResponse | null) => {
       if (!payload) return null;
       if (typeof payload.output_text === "string") return payload.output_text;
-      const contentItems: any[] =
-        payload.output?.flatMap((item: any) => item.content ?? []) ?? [];
+      const contentItems = payload.output?.flatMap((item) => item.content ?? []) ?? [];
       for (const item of contentItems) {
         if (typeof item?.text === "string") return item.text;
         if (typeof item?.output_text === "string") return item.output_text;
@@ -125,7 +128,7 @@ export async function POST(request: Request) {
     let parsed;
     try {
       parsed = JSON.parse(normalizeJson(outputText));
-    } catch (err) {
+    } catch {
       return NextResponse.json(
         { error: "Failed to parse AI response", raw: outputText },
         { status: 500 }
@@ -165,7 +168,7 @@ export async function POST(request: Request) {
     };
 
     return NextResponse.json(parsed);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
   }
 }

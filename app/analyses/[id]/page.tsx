@@ -111,7 +111,7 @@ export default function AnalysisDetailPage() {
   >([]);
   const [status, setStatus] = useState("Loading analysis…");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [report, setReport] = useState<Record<string, any> | null>(null);
+  const [report, setReport] = useState<Record<string, unknown> | null>(null);
   const [activePathway, setActivePathway] = useState(0);
   const [activeMetric, setActiveMetric] = useState<
     "eco" | "circularity" | "leakage" | "community" | "impact" | null
@@ -176,19 +176,6 @@ export default function AnalysisDetailPage() {
         : "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10"
     }`;
 
-  const scenarioChartData = useMemo(() => {
-    const items = report?.what_if_scenario_engine ?? [];
-    return items
-      .map((scenario: { scenario: string; expected_change: string }) => {
-        const match = scenario.expected_change?.match(/-?\d+(?:\.\d+)?/);
-        return {
-          name: scenario.scenario,
-          value: match ? Number(match[0]) : 0,
-          label: scenario.expected_change,
-        };
-      })
-      .slice(0, 6);
-  }, [report]);
 
   const sankeyData = useMemo(() => {
     if (!pathways.length) return undefined;
@@ -201,6 +188,10 @@ export default function AnalysisDetailPage() {
       })),
     };
   }, [pathways, title]);
+
+  const safeActivePathway = sortedPathways.length
+    ? Math.min(activePathway, sortedPathways.length - 1)
+    : 0;
 
   useEffect(() => {
     const load = async () => {
@@ -267,17 +258,13 @@ export default function AnalysisDetailPage() {
         );
 
         setStatus("");
-      } catch (error) {
+      } catch {
         setStatus("Unable to load analysis.");
       }
     };
 
     if (analysisId) load();
   }, [analysisId]);
-
-  useEffect(() => {
-    setActivePathway(0);
-  }, [sortedPathways.length]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -339,7 +326,7 @@ export default function AnalysisDetailPage() {
                         if (error) throw error;
 
                         window.location.href = "/analyses";
-                      } catch (error) {
+                      } catch {
                         setStatus("Unable to delete analysis.");
                       } finally {
                         setIsDeleting(false);
@@ -1060,7 +1047,7 @@ export default function AnalysisDetailPage() {
                     {sortedPathways.length ? (
                       <ol className="space-y-2">
                         {sortedPathways.map((row, index) => {
-                          const isActive = index === activePathway;
+                          const isActive = index === safeActivePathway;
                           return (
                             <li key={`${row.id}-${index}`}>
                               <button
@@ -1124,7 +1111,7 @@ export default function AnalysisDetailPage() {
                             Pathway
                           </p>
                           <p className="mt-1 text-base font-semibold text-foreground">
-                            {sortedPathways[activePathway]?.name}
+                            {sortedPathways[safeActivePathway]?.name}
                           </p>
                         </div>
                         <div className="grid gap-3 md:grid-cols-2">
@@ -1133,7 +1120,7 @@ export default function AnalysisDetailPage() {
                               Probability
                             </p>
                             <p className="mt-1 text-sm font-medium text-foreground">
-                              {sortedPathways[activePathway]?.probability ?? "–"}%
+                              {sortedPathways[safeActivePathway]?.probability ?? "–"}%
                             </p>
                           </div>
                           <div className="rounded-lg border border-border/40 px-4 py-3">
@@ -1141,7 +1128,7 @@ export default function AnalysisDetailPage() {
                               Loss hotspot
                             </p>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              {sortedPathways[activePathway]?.loss ?? "None flagged"}
+                              {sortedPathways[safeActivePathway]?.loss ?? "None flagged"}
                             </p>
                           </div>
                         </div>

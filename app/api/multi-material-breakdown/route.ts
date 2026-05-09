@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+type OpenAIContentItem = { text?: string; output_text?: string; text?: { value?: string } };
+type OpenAIOutputItem = { content?: OpenAIContentItem[] };
+type OpenAIResponse = { output_text?: string; output?: OpenAIOutputItem[] };
+
 type BreakdownRequest = {
   product: string;
   region?: string;
@@ -288,18 +292,17 @@ export async function POST(request: Request) {
 
       if (response.ok) {
         const rawText = await response.text();
-        let data: any = null;
+        let data: OpenAIResponse | null = null;
         try {
           data = JSON.parse(rawText);
         } catch {
           data = null;
         }
 
-        const extractOutputText = (payload: any) => {
+        const extractOutputText = (payload: OpenAIResponse | null) => {
           if (!payload) return null;
           if (typeof payload.output_text === "string") return payload.output_text;
-          const contentItems: any[] =
-            payload.output?.flatMap((item: any) => item.content ?? []) ?? [];
+          const contentItems = payload.output?.flatMap((item) => item.content ?? []) ?? [];
           for (const item of contentItems) {
             if (typeof item?.text === "string") return item.text;
             if (typeof item?.output_text === "string") return item.output_text;
@@ -325,16 +328,19 @@ export async function POST(request: Request) {
             const parsed = JSON.parse(normalizeJson(outputText));
             if (Array.isArray(parsed?.components)) {
               components = parsed.components
-                .map((c: any) => ({
-                  name: String(c?.name ?? "Unknown component"),
-                  materials: Array.isArray(c?.materials)
-                    ? c.materials.map((m: any) => String(m))
+                .map((c: unknown) => {
+                  const candidate = c as Partial<BreakdownComponent> & { materials?: unknown[] };
+                  return ({
+                  name: String(candidate?.name ?? "Unknown component"),
+                  materials: Array.isArray(candidate?.materials)
+                    ? candidate.materials.map((m: unknown) => String(m))
                     : ["Mixed material"],
-                  estimatedMassShare: Number(c?.estimatedMassShare) || 0,
-                  disposalCategory: c?.disposalCategory,
-                  recoveryPotential: c?.recoveryPotential,
-                  notes: String(c?.notes ?? ""),
-                }))
+                  estimatedMassShare: Number(candidate?.estimatedMassShare) || 0,
+                  disposalCategory: candidate?.disposalCategory as DisposalCategory,
+                  recoveryPotential: candidate?.recoveryPotential as RecoveryPotential,
+                  notes: String(candidate?.notes ?? ""),
+                });
+                })
                 .filter((c: BreakdownComponent) =>
                   [
                     "Recyclable",
