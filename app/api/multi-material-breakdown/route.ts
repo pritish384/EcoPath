@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-type OpenAIContentItem = { text?: string; output_text?: string; text?: { value?: string } };
+type OpenAIContentItem = {
+  text?: string | { value?: string };
+  output_text?: string;
+};
 type OpenAIOutputItem = { content?: OpenAIContentItem[] };
 type OpenAIResponse = { output_text?: string; output?: OpenAIOutputItem[] };
 
@@ -306,7 +309,13 @@ export async function POST(request: Request) {
           for (const item of contentItems) {
             if (typeof item?.text === "string") return item.text;
             if (typeof item?.output_text === "string") return item.output_text;
-            if (typeof item?.text?.value === "string") return item.text.value;
+            if (
+              typeof item?.text === "object" &&
+              item?.text &&
+              typeof item.text.value === "string"
+            ) {
+              return item.text.value;
+            }
           }
           return null;
         };

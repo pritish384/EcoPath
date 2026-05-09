@@ -152,7 +152,10 @@ export default function AiCategorizationPage() {
 
             <div className="grid gap-2">
               <Label>Region</Label>
-              <Select value={region} onValueChange={setRegion}>
+              <Select
+                value={region}
+                onValueChange={(value) => setRegion(value ?? "India")}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>

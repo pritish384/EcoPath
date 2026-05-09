@@ -106,9 +106,15 @@ type OverpassElement = {
   tags?: Record<string, string>;
 };
 
+type OverpassNode = OverpassElement & { lat: number; lon: number };
+
+function isOverpassNode(item: OverpassElement): item is OverpassNode {
+  return typeof item.lat === "number" && typeof item.lon === "number";
+}
+
 function mapOverpassToResults(items: OverpassElement[], category: string): LocationResult[] {
   return items
-    .filter((item) => item.lat && item.lon)
+    .filter(isOverpassNode)
     .map((item) => ({
       id: String(item.id),
       name: item.tags?.name ?? "Unnamed facility",
@@ -306,7 +312,10 @@ export default function LocationsPage() {
               </div>
               <div className="grid gap-2">
                 <Label>Category</Label>
-                <Select value={category} onValueChange={(value) => setCategory(value as Category)}>
+                <Select
+                  value={category}
+                  onValueChange={(value) => setCategory((value as Category) ?? "recycling")}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -321,7 +330,10 @@ export default function LocationsPage() {
               </div>
               <div className="grid gap-2">
                 <Label>Search radius (meters)</Label>
-                <Select value={radius} onValueChange={setRadius}>
+                <Select
+                  value={radius}
+                  onValueChange={(value) => setRadius(value ?? "5000")}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select radius" />
                   </SelectTrigger>

@@ -237,7 +237,10 @@ export default function DisposalGeneratorPage() {
 
               <div className="grid gap-2">
                 <Label>Region</Label>
-                <Select value={region} onValueChange={setRegion}>
+                <Select
+                  value={region}
+                  onValueChange={(value) => setRegion(value ?? "India")}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select region" />
                   </SelectTrigger>
@@ -463,7 +466,10 @@ export default function DisposalGeneratorPage() {
               <span className="text-muted-foreground">Current:</span>
               <Badge variant="secondary">{result?.productName || "—"}</Badge>
               <span className="text-muted-foreground">vs</span>
-              <Select value={compareProduct} onValueChange={setCompareProduct}>
+              <Select
+                value={compareProduct}
+                onValueChange={(value) => setCompareProduct(value ?? compareSamples[0])}
+              >
                 <SelectTrigger className="w-[220px]">
                   <SelectValue />
                 </SelectTrigger>

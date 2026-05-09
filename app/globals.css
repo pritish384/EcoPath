@@ -49,6 +49,10 @@
 }
 
 :root {
+  --font-jakarta: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-jetbrains: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --font-fraunces: "Fraunces", "Times New Roman", Georgia, serif;
   --background: oklch(0.98 0.02 95);
   --foreground: oklch(0.22 0.05 160);
   --card: oklch(0.99 0.015 95);

@@ -5,12 +5,16 @@ import {
   BarChart,
   ResponsiveContainer,
   Tooltip,
-  TooltipProps,
   XAxis,
   YAxis,
 } from "recharts";
 
-function BarTooltip({ active, payload }: TooltipProps<number, string>) {
+type BarTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ value?: number; payload?: { name?: string } }>;
+};
+
+function BarTooltip({ active, payload }: BarTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow">

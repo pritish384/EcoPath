@@ -4,10 +4,14 @@ import {
   ResponsiveContainer,
   Sankey,
   Tooltip,
-  TooltipProps,
 } from "recharts";
 
-function SankeyTooltip({ active, payload }: TooltipProps<number, string>) {
+type SankeyTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ value?: number; name?: string }>;
+};
+
+function SankeyTooltip({ active, payload }: SankeyTooltipProps) {
   if (!active || !payload?.length) return null;
   const value = payload[0]?.value;
   const name = payload[0]?.name ?? "";

@@ -111,7 +111,34 @@ export default function AnalysisDetailPage() {
   >([]);
   const [status, setStatus] = useState("Loading analysis…");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [report, setReport] = useState<Record<string, unknown> | null>(null);
+  const [report, setReport] = useState<{
+    summary?: string;
+    waste_future_predictor?: { day?: string; week?: string; year?: string };
+    behavior_based_suggestion?: { habits?: string[]; suggestions?: string[] };
+    waste_flow_map?: { steps?: string[]; notes?: string };
+    hidden_material_flow?: string[];
+    uncertainty_output?: { range_low?: number; range_high?: number; notes?: string };
+    product_aware_prediction?: string;
+    explainable_ai_output?: string;
+    reverse_supply_chain_suggestion?: string[];
+    circularity_score?: number;
+    waste_leakage_detector?: { leakage_percent?: number; drivers?: string[] };
+    community_waste_score?: { score?: number; rationale?: string };
+    impact_simulator?: {
+      recycle?: { co2_kg?: number; notes?: string };
+      landfill?: { co2_kg?: number; notes?: string };
+      delta_kg?: number;
+    };
+    eco_score?: {
+      overall?: number;
+      recyclability_score?: number;
+      environmental_impact_score?: number;
+      toxicity_score?: number;
+      recyclability_label?: "High" | "Medium" | "Low";
+      impact_label?: "Low" | "Medium" | "High";
+      toxicity_label?: "Low" | "Medium" | "High";
+    };
+  } | null>(null);
   const [activePathway, setActivePathway] = useState(0);
   const [activeMetric, setActiveMetric] = useState<
     "eco" | "circularity" | "leakage" | "community" | "impact" | null
